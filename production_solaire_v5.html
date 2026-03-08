@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Production Solaire V5</title>
+    <!-- PWA -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Solaire">
+    <meta name="theme-color" content="#ff9500">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="manifest.json">
+    <!-- Apple Touch Icon (inline SVG workaround via data URI) -->
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23ff9500'/%3E%3Ctext y='.9em' font-size='80' x='10'%3E%E2%98%80%EF%B8%8F%3C/text%3E%3C/svg%3E">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif; background:#f5f5f7; min-height:100vh; }
+        .hero { background:linear-gradient(160deg,#ff9500 0%,#ffcc00 100%); padding:40px 20px 60px; text-align:center; position:relative; overflow:hidden; }
+        .hero::before { content:''; position:absolute; top:-50%; left:-50%; width:200%; height:200%; background:radial-gradient(circle at 60% 40%,rgba(255,255,255,0.15) 0%,transparent 60%); pointer-events:none; }
+        .hero-icon { font-size:3.5em; margin-bottom:10px; display:block; }
+        .hero h1 { color:white; font-size:clamp(1.6em,5vw,2.8em); font-weight:700; letter-spacing:-0.03em; text-shadow:0 2px 12px rgba(0,0,0,0.1); }
+        .hero .subtitle { color:rgba(255,255,255,0.85); font-size:1em; margin-top:6px; }
+        .container { max-width:1200px; margin:-10px auto 0; padding:0 16px 80px; }
+        .card { background:white; border-radius:18px; padding:20px; margin-bottom:20px; box-shadow:0 2px 16px rgba(0,0,0,0.07); }
+        .card-title { font-size:1.1em; font-weight:700; color:#1d1d1f; margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid #f2f2f7; }
+        .toggle-buttons { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:4px; }
+        .toggle-btn { flex:1; min-width:120px; padding:10px 14px; border-radius:10px; border:1.5px solid #e0e0e0; background:#f5f5f7; color:#1d1d1f; font-size:0.85em; font-weight:500; cursor:pointer; transition:all 0.2s; text-align:center; }
+        .toggle-btn.active { background:#ff9500; border-color:#ff9500; color:white; box-shadow:0 2px 10px rgba(255,149,0,0.3); }
+        .toggle-result { margin-top:16px; padding:14px 16px; background:#fff9ec; border-radius:10px; border-left:4px solid #ff9500; font-size:0.95em; color:#1d1d1f; min-height:46px; display:flex; align-items:center; flex-wrap:wrap; gap:6px; }
+        .contrat-inputs { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+        .contrat-inputs label { font-size:0.85em; color:#6e6e73; font-weight:500; }
+        .contrat-inputs input[type=date] { padding:10px 14px; border:1.5px solid #e0e0e0; border-radius:10px; font-size:0.9em; background:#f5f5f7; color:#1d1d1f; outline:none; }
+        .contrat-inputs input[type=date]:focus { border-color:#0071e3; }
+        .calc-btn { background:#0071e3; color:white; border:none; padding:10px 20px; border-radius:10px; font-size:0.9em; font-weight:500; cursor:pointer; }
+        .calc-btn:hover { background:#0077ed; }
+        .contrat-results { margin-top:14px; display:none; }
+        .contrat-year-item { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-radius:10px; margin-bottom:8px; background:#f5f5f7; font-size:0.9em; }
+        .contrat-year-item.current { background:linear-gradient(90deg,#fff5e0,#fff9ec); border-left:4px solid #ff9500; font-weight:600; }
+        .contrat-year-label { color:#1d1d1f; }
+        .contrat-year-value { color:#ff9500; font-weight:700; }
+        canvas { max-height:380px; }
+        .table-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px; }
+        .table-container { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+        table { width:100%; border-collapse:collapse; min-width:600px; }
+        th { background:#f5f5f7; color:#6e6e73; padding:12px 10px; text-align:center; font-weight:600; font-size:0.8em; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #e5e5ea; position:sticky; top:0; z-index:10; }
+        td { padding:10px 8px; text-align:center; border-bottom:1px solid #f2f2f7; }
+        tbody tr:nth-child(even) { background:#fafafa; }
+        tbody tr:hover { background:#fff9ec; }
+        .month-cell { font-weight:600; color:#1d1d1f; text-align:left; padding-left:16px; font-size:0.9em; white-space:nowrap; }
+        .total-row { background:#fff9ec !important; }
+        .total-row td { color:#c07000; font-weight:700; font-size:0.9em; }
+        .average-row { background:#edf5ff !important; }
+        .average-row td { color:#0055b3; font-weight:700; font-size:0.9em; }
+        input[type=number] { width:72px; padding:7px 4px; border:1.5px solid transparent; border-radius:8px; text-align:center; font-size:0.88em; background:transparent; transition:all 0.2s; -moz-appearance:textfield; }
+        input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+        input[type=number]:focus { outline:none; border-color:#0071e3; background:white; box-shadow:0 0 0 3px rgba(0,113,227,0.1); }
+        .action-btn { background:#0071e3; color:white; border:none; padding:10px 18px; border-radius:10px; font-size:0.88em; font-weight:500; cursor:pointer; transition:all 0.2s; white-space:nowrap; }
+        .action-btn:hover { background:#0077ed; box-shadow:0 4px 12px rgba(0,113,227,0.25); }
+        .action-btn:active { transform:scale(0.97); }
+        .del-btn { background:#ff3b30; color:white; border:none; padding:10px 18px; border-radius:10px; font-size:0.88em; font-weight:500; cursor:pointer; transition:all 0.2s; white-space:nowrap; margin-left:8px; }
+        .del-btn:hover { background:#ff2d20; box-shadow:0 4px 12px rgba(255,59,48,0.25); }
+        .del-btn:active { transform:scale(0.97); }
+        @media(max-width:600px) {
+            .hero { padding:30px 16px 50px; }
+            .toggle-btn { min-width:80px; font-size:0.8em; padding:8px 10px; }
+            input[type=number] { width:55px; font-size:0.82em; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="hero">
+    <span class="hero-icon">&#9728;&#65039;</span>
+    <h1>Production d&#39;&Eacute;nergie Solaire</h1>
+    <p class="subtitle">Suivi mensuel de la production en kWh</p>
+</div>
+
+<div class="container">
+
+    <div class="card">
+        <div class="card-title">&#128269; Statistiques avanc&#233;es</div>
+        <div class="toggle-buttons">
+            <button class="toggle-btn active" id="btn-month" onclick="setToggle('month')">&#127765; Meilleur Mois</button>
+            <button class="toggle-btn" id="btn-avg" onclick="setToggle('avg')">&#128200; Meilleure Moyenne</button>
+            <button class="toggle-btn" id="btn-year" onclick="setToggle('year')">&#127942; Meilleure Ann&#233;e</button>
+            <button class="toggle-btn" id="btn-monthavg" onclick="setToggle('monthavg')">&#128197; Moy. par Mois</button>
+        </div>
+        <div class="toggle-result" id="toggleResult">Calcul en cours...</div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">&#128203; Ann&#233;e Anniversaire de Contrat</div>
+        <div class="contrat-inputs">
+            <label>Date de d&#233;but :</label>
+            <input type="date" id="contratDate" />
+            <button class="calc-btn" onclick="calcContrat()">Calculer</button>
+        </div>
+        <div class="contrat-results" id="contratResults"></div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">&#128200; &#201;volution mensuelle par ann&#233;e</div>
+        <canvas id="productionChart"></canvas>
+    </div>
+
+    <div class="card">
+        <div class="table-header">
+            <div class="card-title" style="margin:0;border:none;padding:0">&#9728;&#65039; Donn&#233;es Mensuelles</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="action-btn" id="addYearBtn">&#65291; Ajouter une ann&#233;e</button>
+                <button class="del-btn" id="delYearBtn">&#8722; Supprimer derni&#232;re ann&#233;e</button>
+            </div>
+        </div>
+        <div class="table-container">
+            <table id="dataTable">
+                <thead>
+                    <tr id="headerRow">
+                        <th>Mois</th>
+                        <th>2018</th><th>2019</th><th>2020</th><th>2021</th><th>2022</th>
+                        <th>2023</th><th>2024</th><th>2025</th><th>2026</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+var data = {
+    months: ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'],
+    years: ['2018','2019','2020','2021','2022','2023','2024','2025','2026'],
+    values: [
+        ['','48.7','65.4','40.4','57.4','34.9','57','64.6','36.9'],
+        ['','172.1','109.4','140.4','114.1','119.2','78.2','62.8','67.9'],
+        ['','223.5','246.9','237.3','247.4','168.4','172.3','220.7',''],
+        ['','285.4','384.4','316.2','283.3','248.7','242.5','285.3',''],
+        ['','366.9','419.2','321.3','378.7','357.6','289','368.6',''],
+        ['392.7','416.9','358.1','355.5','376.6','433.8','318.5','351.5',''],
+        ['433.8','416','407.4','314.1','428.2','','332.4','308.4',''],
+        ['348.3','338.1','323.3','276.4','357','','312.6','294.8',''],
+        ['288.1','246.1','245.1','258.1','219.6','','186.2','164',''],
+        ['185.7','129','58.8','156.8','150.8','','112','124.7',''],
+        ['91.6','64.7','97.1','53.7','69.2','','45.2','69.8',''],
+        ['39.1','58.8','39.3','34.8','34.9','36.3','37.1','54.7','']
+    ]
+};
+
+var currentToggle = 'month';
+var colors = ['#ff9500','#0071e3','#30d158','#bf5af2','#ff375f','#5e5ce6','#00c7be','#ff9f0a','#8e8e93','#32ade6','#ac8e68'];
+
+function calcYearTotal(yi) {
+    var t=0,has=false;
+    data.values.forEach(function(m){ var v=parseFloat(m[yi]); if(!isNaN(v)&&v>0){t+=v;has=true;} });
+    return has?t:0;
+}
+function calcYearAvg(yi) {
+    var t=0,c=0;
+    data.values.forEach(function(m){ var v=parseFloat(m[yi]); if(!isNaN(v)&&v>0){t+=v;c++;} });
+    return c>0?t/c:0;
+}
+function calcMonthAvg(mi) {
+    var t=0,c=0;
+    data.years.forEach(function(_,j){ var v=parseFloat(data.values[mi][j]); if(!isNaN(v)&&v>0){t+=v;c++;} });
+    return c>0?t/c:0;
+}
+
+function buildTable() {
+    var tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+    data.months.forEach(function(month,i) {
+        var row = document.createElement('tr');
+        var html = '<td class="month-cell">'+month+'</td>';
+        data.years.forEach(function(year,j) {
+            var v = data.values[i][j]||'';
+            html += '<td><input type="number" step="0.1" value="'+v+'" data-month="'+i+'" data-year="'+j+'" placeholder="-"></td>';
+        });
+        row.innerHTML = html;
+        tbody.appendChild(row);
+    });
+    var sep = document.createElement('tr');
+    sep.innerHTML = '<td colspan="'+(data.years.length+1)+'" style="height:12px;border:none;background:#f5f5f7;"></td>';
+    tbody.appendChild(sep);
+    var totalRow = document.createElement('tr');
+    totalRow.className = 'total-row';
+    var th = '<td class="month-cell">Total annuel</td>';
+    data.years.forEach(function(_,j){ var t=calcYearTotal(j); th+='<td>'+(t>0?t.toFixed(1):'-')+'</td>'; });
+    totalRow.innerHTML = th;
+    tbody.appendChild(totalRow);
+    var avgRow = document.createElement('tr');
+    avgRow.className = 'average-row';
+    var ah = '<td class="month-cell">Moy. mensuelle</td>';
+    data.years.forEach(function(_,j){ var a=calcYearAvg(j); ah+='<td>'+(a>0?a.toFixed(1):'-')+'</td>'; });
+    avgRow.innerHTML = ah;
+    tbody.appendChild(avgRow);
+    document.querySelectorAll('input[type=number]').forEach(function(input) {
+        input.addEventListener('change', function() {
+            data.values[+this.dataset.month][+this.dataset.year] = this.value;
+            updateChart(); updateTotals(); updateToggle();
+        });
+    });
+}
+
+function updateTotals() {
+    var tc = document.querySelectorAll('.total-row td');
+    var ac = document.querySelectorAll('.average-row td');
+    data.years.forEach(function(_,j) {
+        tc[j+1].textContent = (function(){ var t=calcYearTotal(j); return t>0?t.toFixed(1):'-'; })();
+        ac[j+1].textContent = (function(){ var a=calcYearAvg(j); return a>0?a.toFixed(1):'-'; })();
+    });
+}
+
+function setToggle(type) {
+    currentToggle = type;
+    ['month','avg','year','monthavg'].forEach(function(t){
+        var btn = document.getElementById('btn-'+t);
+        if(btn) btn.classList.toggle('active', t===type);
+    });
+    updateToggle();
+}
+
+function updateToggle() {
+    var el = document.getElementById('toggleResult');
+    if(currentToggle === 'month') {
+        var max=0,name='-',yr='-';
+        data.values.forEach(function(mv,i){ mv.forEach(function(v,j){ var n=parseFloat(v); if(!isNaN(n)&&n>max){max=n;name=data.months[i];yr=data.years[j];} }); });
+        el.innerHTML = 'Meilleur mois enregistré : <strong>'+name+'</strong> en <strong>'+yr+'</strong> &mdash; <strong style="color:#ff9500">'+max.toFixed(1)+' kWh</strong>';
+    } else if(currentToggle === 'avg') {
+        var maxAvg=0,bestMonth='-';
+        data.months.forEach(function(month,i){ var avg=calcMonthAvg(i); if(avg>maxAvg){maxAvg=avg;bestMonth=month;} });
+        el.innerHTML = 'Meilleure moyenne mensuelle : <strong>'+bestMonth+'</strong> &mdash; <strong style="color:#ff9500">'+maxAvg.toFixed(1)+' kWh</strong> de moyenne';
+    } else if(currentToggle === 'year') {
+        var maxT=0,bestYr='-';
+        data.years.forEach(function(yr,j){ var t=calcYearTotal(j); if(t>maxT){maxT=t;bestYr=yr;} });
+        el.innerHTML = 'Meilleure année : <strong>'+bestYr+'</strong> &mdash; <strong style="color:#ff9500">'+maxT.toFixed(1)+' kWh</strong> de production totale';
+    } else if(currentToggle === 'monthavg') {
+        var rows=data.months.map(function(month,i){ return {name:month,avg:calcMonthAvg(i)}; });
+        rows.sort(function(a,b){ return b.avg-a.avg; });
+        var html='<div style="display:flex;flex-wrap:wrap;gap:8px;width:100%">';
+        rows.forEach(function(r,idx){
+            var opacity=Math.max(0.15,1-idx*0.08);
+            html+='<span style="background:rgba(255,149,0,'+opacity+');color:'+(idx<5?'white':'#1d1d1f')+';padding:5px 12px;border-radius:8px;font-size:0.85em;font-weight:500">'+r.name+' : '+r.avg.toFixed(1)+' kWh</span>';
+        });
+        html+='</div>';
+        el.innerHTML=html;
+    }
+}
+
+function calcContrat() {
+    var dateInput = document.getElementById('contratDate').value;
+    if(!dateInput) return;
+    var start = new Date(dateInput);
+    var startDay=start.getDate(), startMonth=start.getMonth(), startYear=start.getFullYear();
+    var currentYear=new Date().getFullYear();
+    var resultsDiv=document.getElementById('contratResults');
+    resultsDiv.style.display='block';
+    var html='';
+    for(var cy=startYear; cy<=currentYear; cy++) {
+        var total=0,hasAny=false;
+        for(var m=0; m<12; m++) {
+            var monthIdx=(startMonth+m)%12;
+            var yearVal=(startMonth+m)<12?cy:cy+1;
+            var yIdx=data.years.indexOf(yearVal.toString());
+            if(yIdx>=0){ var v=parseFloat(data.values[monthIdx][yIdx]); if(!isNaN(v)&&v>0){total+=v;hasAny=true;} }
+        }
+        var d=String(startDay).padStart(2,'0'), mo=String(startMonth+1).padStart(2,'0');
+        var label=d+'/'+mo+'/'+cy+' → '+d+'/'+mo+'/'+(cy+1);
+        var isCurrent=(cy===currentYear-1);
+        html+='<div class="contrat-year-item'+(isCurrent?' current':'')+'"><span class="contrat-year-label">'+label+'</span><span class="contrat-year-value">'+(hasAny?total.toFixed(1)+' kWh':'&#8212; données incomplètes')+'</span></div>';
+    }
+    resultsDiv.innerHTML=html;
+}
+
+var ctx=document.getElementById('productionChart').getContext('2d');
+var chart=new Chart(ctx,{
+    type:'line',
+    data:{ labels:data.months, datasets:[] },
+    options:{
+        responsive:true, maintainAspectRatio:true,
+        plugins:{
+            legend:{ position:'top', labels:{ font:{size:11}, padding:12, usePointStyle:true } },
+            tooltip:{ callbacks:{ label:function(c){ return c.dataset.label+': '+c.parsed.y+' kWh'; } } }
+        },
+        scales:{
+            y:{ beginAtZero:true, grid:{color:'rgba(0,0,0,0.04)'}, ticks:{color:'#6e6e73',font:{size:11}}, title:{display:true,text:'kWh',color:'#6e6e73'} },
+            x:{ grid:{display:false}, ticks:{color:'#6e6e73',font:{size:11}} }
+        }
+    }
+});
+
+function updateChart() {
+    chart.data.datasets=data.years.map(function(yr,i){
+        return {
+            label:yr,
+            data:data.values.map(function(mv){ var v=parseFloat(mv[i]); return isNaN(v)?null:v; }),
+            borderColor:colors[i%colors.length],
+            backgroundColor:colors[i%colors.length]+'20',
+            borderWidth:2.5, tension:0.4, pointRadius:3, pointHoverRadius:6, spanGaps:false
+        };
+    });
+    chart.update();
+}
+
+document.getElementById('addYearBtn').addEventListener('click',function(){
+    var newYear=(parseInt(data.years[data.years.length-1])+1).toString();
+    data.years.push(newYear);
+    data.values.forEach(function(mv){ mv.push(''); });
+    var th=document.createElement('th'); th.textContent=newYear;
+    document.getElementById('headerRow').appendChild(th);
+    buildTable(); updateChart(); updateToggle();
+});
+
+
+document.getElementById('delYearBtn').addEventListener('click',function(){
+    if(data.years.length <= 1) { alert('Impossible de supprimer la derniere annee.'); return; }
+    if(!confirm('Supprimer l annee ' + data.years[data.years.length-1] + ' ?')) return;
+    data.years.pop();
+    data.values.forEach(function(mv){ mv.pop(); });
+    var headerRow = document.getElementById('headerRow');
+    headerRow.removeChild(headerRow.lastElementChild);
+    buildTable(); updateChart(); updateToggle();
+});
+
+buildTable();
+updateChart();
+updateToggle();
+</script>
+
+<script>
+if('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+        navigator.serviceWorker.register('sw.js').then(function(reg) {
+            console.log('SW registered');
+        }).catch(function(err) {
+            console.log('SW error', err);
+        });
+    });
+}
+</script>
+</body>
+</html>
