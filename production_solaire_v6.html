@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Solaire</title>
+<meta name="theme-color" content="#FF9500">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Solaire">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta name="mobile-web-app-capable" content="yes">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root{
+  --sun:#FF9500;--sun2:#FFD60A;--green:#30D158;--blue:#0071E3;
+  --teal:#00C7BE;--red:#FF3B30;--purple:#BF5AF2;--indigo:#5E5CE6;
+  --bg:#F2F2F7;--bg2:#E5E5EA;--card:#FFF;
+  --text:#1D1D1F;--sub:#6E6E73;--border:#D1D1D6;
+  --r:20px;--rs:12px;--rx:9px;
+  --sh:0 1px 3px rgba(0,0,0,.08),0 4px 20px rgba(0,0,0,.06);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif;
+  background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+
+/* LOGIN */
+.login-overlay{position:fixed;top:0;left:0;width:100%;height:100%;
+  background:linear-gradient(160deg,#FF8C00,#FFD000);
+  display:flex;align-items:center;justify-content:center;padding:20px;z-index:9999}
+.login-card{background:#fff;border-radius:28px;padding:44px 28px 36px;
+  width:100%;max-width:360px;box-shadow:0 24px 64px rgba(0,0,0,.18);text-align:center}
+.login-icon{font-size:3.4em;margin-bottom:14px}
+.login-title{font-size:1.5em;font-weight:800;letter-spacing:-.03em;margin-bottom:5px}
+.login-sub{font-size:.85em;color:var(--sub);margin-bottom:28px}
+.lf{width:100%;padding:15px 16px;border:1.5px solid var(--border);border-radius:14px;
+  font-size:.95em;margin-bottom:11px;outline:none;background:var(--bg);
+  transition:border .2s,box-shadow .2s;-webkit-appearance:none}
+.lf:focus{border-color:var(--sun);background:#fff;box-shadow:0 0 0 4px rgba(255,149,0,.12)}
+.login-btn{width:100%;padding:15px;background:var(--sun);color:#fff;border:none;
+  border-radius:14px;font-size:1em;font-weight:700;cursor:pointer;margin-top:4px;transition:opacity .2s}
+.login-btn:disabled{opacity:.6}
+.login-err{color:var(--red);font-size:.82em;margin-top:10px;min-height:18px;line-height:1.4}
+
+/* SYNC BAR */
+.sync-bar{display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:9px 16px;font-size:.78em;font-weight:600;position:sticky;top:0;z-index:100;
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.sync-bar.synced {background:rgba(209,250,229,.94);color:#065F46}
+.sync-bar.syncing{background:rgba(254,243,199,.94);color:#92400E}
+.sync-bar.error  {background:rgba(254,226,226,.94);color:#991B1B}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex-shrink:0}
+.dot.pulse{animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+.logout-btn{background:none;border:1px solid currentColor;padding:3px 10px;
+  border-radius:20px;font-size:.75em;cursor:pointer;color:inherit;margin-left:8px;font-weight:600}
+
+/* HERO */
+.hero{background:linear-gradient(150deg,#FF8C00,#FFD000);
+  padding:42px 20px 68px;text-align:center;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;inset:0;
+  background:radial-gradient(ellipse at 75% 0%,rgba(255,255,255,.18),transparent 55%);pointer-events:none}
+.hero-icon{font-size:3.8em;display:block;margin-bottom:12px;
+  filter:drop-shadow(0 6px 12px rgba(0,0,0,.14))}
+.hero h1{color:#fff;font-size:clamp(1.6em,5vw,2.5em);font-weight:800;
+  letter-spacing:-.035em;text-shadow:0 2px 10px rgba(0,0,0,.1)}
+.hero-sub{color:rgba(255,255,255,.82);font-size:.88em;margin-top:6px}
+
+/* WRAP */
+.wrap{max-width:860px;margin:-36px auto 0;padding:0 14px 100px;position:relative}
+
+/* CARD */
+.card{background:var(--card);border-radius:var(--r);margin-bottom:14px;box-shadow:var(--sh);overflow:hidden}
+.card-head{display:flex;align-items:center;gap:12px;padding:18px 20px 14px;border-bottom:1px solid var(--bg)}
+.chi{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.05em;flex-shrink:0}
+.chi.sun   {background:linear-gradient(135deg,var(--sun),var(--sun2))}
+.chi.green {background:linear-gradient(135deg,var(--green),#34C759)}
+.chi.blue  {background:linear-gradient(135deg,var(--blue),#32ADE6)}
+.chi.teal  {background:linear-gradient(135deg,var(--teal),var(--green))}
+.chi.purple{background:linear-gradient(135deg,var(--purple),#9B59B6)}
+.chi.indigo{background:linear-gradient(135deg,var(--indigo),#3634A3)}
+.chi.gray  {background:var(--bg2);font-size:1.2em}
+.card-title{font-size:1em;font-weight:700;letter-spacing:-.01em}
+.card-sub  {font-size:.74em;color:var(--sub);margin-top:2px}
+.card-body {padding:18px 20px}
+
+/* SECTION LABEL */
+.slabel{font-size:.7em;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--sub);margin:0 0 8px;display:flex;align-items:center;gap:6px}
+.slabel-num{width:20px;height:20px;border-radius:50%;background:var(--sun);color:#fff;
+  font-size:.85em;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:800}
+
+/* DIVIDER */
+.divider{height:1px;background:var(--bg);margin:16px 0}
+
+/* INPUT ROW */
+.irow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+  background:var(--bg);border-radius:var(--rs);padding:12px 14px;margin-bottom:10px}
+.irow label{font-size:.8em;color:var(--sub);font-weight:500;white-space:nowrap}
+.irow .sep{font-size:.8em;color:var(--sub)}
+.fi{padding:9px 11px;border:1.5px solid var(--border);border-radius:var(--rx);
+  font-size:.86em;background:#fff;outline:none;transition:border .2s,box-shadow .2s;-webkit-appearance:none}
+.fi:focus{border-color:var(--sun);box-shadow:0 0 0 3px rgba(255,149,0,.12)}
+select.fi{cursor:pointer}
+
+/* STAT GRID */
+.sg {display:grid;gap:10px}
+.sg3{grid-template-columns:repeat(3,1fr)}
+.sg2{grid-template-columns:repeat(2,1fr)}
+.sb {border-radius:var(--rs);padding:16px 12px;text-align:center}
+.sb.plain {background:var(--bg)}
+.sb.sun   {background:linear-gradient(135deg,#FF9500,#FFD60A)}
+.sb.green {background:linear-gradient(135deg,#30D158,#34C759)}
+.sb.blue  {background:linear-gradient(135deg,#0071E3,#32ADE6)}
+.sb.teal  {background:linear-gradient(135deg,#00C7BE,#30D158)}
+.sb.purple{background:linear-gradient(135deg,#BF5AF2,#9B59B6)}
+.sb.sun .sv,.sb.green .sv,.sb.blue .sv,.sb.teal .sv,.sb.purple .sv{color:#fff}
+.sb.sun .sl,.sb.green .sl,.sb.blue .sl,.sb.teal .sl,.sb.purple .sl{color:rgba(255,255,255,.8)}
+.sv{font-size:1.2em;font-weight:700;line-height:1.2;color:var(--text)}
+.sl{font-size:.68em;color:var(--sub);margin-top:4px;font-weight:500;line-height:1.3}
+
+/* BANNER */
+.banner{display:flex;gap:10px;padding:12px 14px;border-radius:var(--rs);margin-bottom:10px}
+.banner.orange{background:#FFF4E0;border-left:3px solid var(--sun)}
+.banner.blue  {background:#E8F0FE;border-left:3px solid var(--blue)}
+.banner.green {background:#E6F9ED;border-left:3px solid var(--green)}
+.banner.red   {background:#FFF0EE;border-left:3px solid var(--red)}
+.banner-ico{font-size:1em;flex-shrink:0;margin-top:1px}
+.banner-body{font-size:.82em;color:var(--text);line-height:1.5}
+.banner-body strong{font-weight:700;display:block;margin-bottom:2px}
+.banner-body small{color:var(--sub)}
+
+/* TOGGLE */
+.tgl-wrap{display:flex;gap:6px;flex-wrap:wrap}
+.tgl{flex:1;min-width:86px;padding:10px 6px;border-radius:var(--rx);
+  border:1.5px solid var(--border);background:#fff;color:var(--text);
+  font-size:.76em;font-weight:600;cursor:pointer;transition:all .18s;text-align:center}
+.tgl.on{background:var(--sun);border-color:var(--sun);color:#fff;box-shadow:0 3px 10px rgba(255,149,0,.3)}
+.tgl-result{margin-top:10px;padding:14px;background:#FFF4E0;border-radius:var(--rs);
+  border-left:3px solid var(--sun);font-size:.87em;min-height:44px;
+  display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+
+/* ANNIVERSAIRE CARDS */
+.anniv-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.anniv-card{border-radius:var(--rs);overflow:hidden;border:1.5px solid var(--border);background:#fff}
+.anniv-card.active{border-color:var(--sun)}
+.anniv-header{display:flex;justify-content:space-between;align-items:center;
+  padding:11px 14px;background:var(--bg)}
+.anniv-header.current{background:#FFF4E0}
+.anniv-header.future{background:#F0F0F5}
+.anniv-header.done{background:var(--bg)}
+.anniv-period{font-size:.84em;font-weight:700;color:var(--text)}
+.anniv-badge{padding:3px 10px;border-radius:99px;font-size:.7em;font-weight:700;
+  background:var(--sun);color:#fff}
+.anniv-badge.done-badge{background:var(--bg2);color:var(--sub)}
+.anniv-badge.future-badge{background:var(--indigo);color:#fff}
+.anniv-body{display:grid;grid-template-columns:repeat(3,1fr);gap:0}
+.anniv-stat{padding:11px 10px;text-align:center;border-right:1px solid var(--bg)}
+.anniv-stat:last-child{border-right:none}
+.anniv-val{font-size:.95em;font-weight:700;color:var(--text)}
+.anniv-val.orange{color:var(--sun)}
+.anniv-val.green{color:var(--green)}
+.anniv-val.red{color:var(--red)}
+.anniv-val.blue{color:var(--blue)}
+.anniv-lbl{font-size:.68em;color:var(--sub);margin-top:3px}
+.anniv-footer{display:flex;align-items:center;justify-content:space-between;
+  padding:8px 14px;background:var(--bg);border-top:1px solid var(--bg2);font-size:.75em}
+.anniv-tarif-label{color:var(--sub)}
+.anniv-tarif-val{font-weight:700;color:var(--blue)}
+.anniv-pct{font-size:.72em;font-weight:600;color:var(--sub)}
+
+/* TARIF ROW */
+.tarif-row{display:flex;align-items:center;flex-wrap:wrap;gap:8px;
+  padding:11px 13px;background:#fff;border-radius:var(--rx);
+  margin-bottom:8px;border:1px solid var(--border)}
+.tarif-row label{font-size:.78em;color:var(--sub);min-width:80px}
+.del-mini{background:var(--red);color:#fff;border:none;padding:5px 10px;
+  border-radius:7px;cursor:pointer;font-size:.76em;font-weight:600;margin-left:auto}
+.add-btn{background:var(--sun);color:#fff;border:none;padding:8px 14px;
+  border-radius:var(--rx);font-size:.8em;font-weight:600;cursor:pointer}
+
+/* ROI */
+.roi-track{background:var(--bg);border-radius:99px;height:14px;overflow:hidden;margin:12px 0 4px}
+.roi-fill{height:100%;background:linear-gradient(90deg,var(--green),#34C759);
+  border-radius:99px;transition:width .7s cubic-bezier(.4,0,.2,1)}
+.roi-pct{font-size:.74em;color:var(--sub);text-align:right;margin-bottom:8px}
+
+/* METEO */
+.meteo-row{display:flex;gap:9px;overflow-x:auto;padding:2px 2px 8px;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none}
+.meteo-row::-webkit-scrollbar{display:none}
+.mday{background:var(--bg);border-radius:var(--rs);padding:14px 10px;text-align:center;min-width:76px;flex-shrink:0}
+.mday.now{background:linear-gradient(145deg,var(--sun),var(--sun2));box-shadow:0 4px 14px rgba(255,149,0,.3)}
+.mday.now .md,.mday.now .mt,.mday.now .ms{color:#fff}
+.md{font-size:.68em;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.05em}
+.mi{font-size:2em;margin:4px 0}
+.mt{font-size:.8em;font-weight:600;color:var(--text)}
+.ms{font-size:.68em;color:var(--sub);margin-top:2px}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;
+  border-radius:var(--rs);border:1px solid var(--border);margin-top:2px}
+table{width:100%;border-collapse:collapse;min-width:580px}
+th{background:var(--bg);color:var(--sub);padding:10px 6px;text-align:center;
+  font-weight:700;font-size:.7em;text-transform:uppercase;letter-spacing:.05em;
+  border-bottom:1.5px solid var(--border)}
+td{padding:8px 6px;text-align:center;border-bottom:1px solid #F5F5F7;font-size:.86em}
+tbody tr:hover{background:#FFFBF5}
+.mc{font-weight:600;text-align:left;padding-left:14px;font-size:.84em;white-space:nowrap}
+.tot-row{background:#FFF4E0!important}.tot-row td{color:#C07000;font-weight:700}
+.avg-row{background:#EDF5FF!important}.avg-row td{color:#0055B3;font-weight:700}
+input[type=number]{width:62px;padding:6px 2px;border:1.5px solid transparent;
+  border-radius:7px;text-align:center;font-size:.84em;background:transparent;-moz-appearance:textfield}
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
+input[type=number]:focus{outline:none;border-color:var(--blue);background:#fff}
+input[type=number].saved{border-color:var(--green);background:#F0FFF4}
+
+/* MISC */
+.hint{font-size:.74em;color:var(--sub);margin-top:6px;line-height:1.5}
+canvas{max-height:360px}
+.btn-add{background:var(--blue);color:#fff;border:none;padding:9px 15px;
+  border-radius:var(--rx);font-size:.8em;font-weight:600;cursor:pointer}
+.btn-del{background:var(--red);color:#fff;border:none;padding:9px 15px;
+  border-radius:var(--rx);font-size:.8em;font-weight:600;cursor:pointer}
+
+@media(max-width:500px){
+  .sg3{grid-template-columns:repeat(2,1fr)}
+  .anniv-body{grid-template-columns:repeat(2,1fr)}
+  input[type=number]{width:48px}
+  .tgl{font-size:.72em;padding:8px 4px}
+  .card-body{padding:14px}
+  .wrap{padding:0 10px 100px}
+}
+
+@media (prefers-color-scheme: dark) {
+  .login-card{background:#2C2C2E;color:#fff}
+  .lf{background:#1C1C1E;border-color:#3A3A3C;color:#fff}
+  .lf::placeholder{color:#636366}
+  .tarif-row{background:#3A3A3C;border-color:#48484A}
+  .anniv-card{background:#3A3A3C;border-color:#48484A}
+  .tgl{background:#2C2C2E;color:#fff;border-color:#3A3A3C}
+  input[type=number]{color:#fff}
+  input[type=number]:focus{background:#3A3A3C}
+  .fi{background:#3A3A3C;border-color:#48484A;color:#fff}
+  tbody tr:hover{background:#3A3A3C}
+  th{background:#1C1C1E}
+  td{border-bottom-color:#3A3A3C}
+  .tbl-wrap{border-color:#3A3A3C}
+  .irow{background:#3A3A3C}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-overlay" id="loginScreen">
+  <div class="login-card">
+    <div class="login-icon">&#9728;&#65039;</div>
+    <div class="login-title">Production Solaire</div>
+    <div class="login-sub">Tableau de bord</div>
+    <input class="lf" type="email" id="loginEmail" placeholder="Email" autocomplete="email"
+      onkeydown="if(event.key==='Enter')document.getElementById('loginPassword').focus()">
+    <input class="lf" type="password" id="loginPassword" placeholder="Mot de passe"
+      autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">Se connecter</button>
+    <div class="login-err" id="loginError"></div>
+  </div>
+</div>
+
+<!-- SYNC -->
+<div class="sync-bar syncing" id="syncBar">
+  <div class="dot pulse" id="syncDot"></div>
+  <span id="syncText">Connexion&hellip;</span>
+  <button class="logout-btn" id="logoutBtn" onclick="doLogout()" style="display:none">D&eacute;connexion</button>
+</div>
+
+<!-- HERO -->
+<div class="hero">
+  <span class="hero-icon">&#9728;&#65039;</span>
+  <h1>Production Solaire</h1>
+  <p class="hero-sub">Woustviller &bull; Suivi mensuel synchronis&eacute;</p>
+</div>
+
+<div class="wrap">
+
+<!-- STATS -->
+<div class="card">
+  <div class="card-head">
+    <div class="chi sun">&#128269;</div>
+    <div><div class="card-title">Statistiques</div><div class="card-sub">Records &amp; moyennes</div></div>
+  </div>
+  <div class="card-body">
+    <div class="tgl-wrap">
+      <button class="tgl on" id="btn-month"    onclick="setToggle('month')">&#127765; Meilleur mois</button>
+      <button class="tgl"    id="btn-avg"       onclick="setToggle('avg')">&#128200; Meilleure moy.</button>
+      <button class="tgl"    id="btn-year"      onclick="setToggle('year')">&#127942; Meilleure ann&eacute;e</button>
+      <button class="tgl"    id="btn-monthavg"  onclick="setToggle('monthavg')">&#128197; Moy. par mois</button>
+    </div>
+    <div class="tgl-result" id="toggleResult">Chargement&hellip;</div>
+  </div>
+</div>
+
+<!-- METEO -->
+<div class="card">
+  <div class="card-head">
+    <div class="chi sun">&#127780;&#65039;</div>
+    <div><div class="card-title">M&eacute;t&eacute;o</div><div class="card-sub">Ensoleillement 7 jours</div></div>
+  </div>
+  <div class="card-body">
+    <div class="hint" id="meteoLoading">&#9201; Chargement&hellip;</div>
+    <div class="meteo-row" id="meteoGrid" style="display:none"></div>
+    <div class="hint" style="margin-top:8px">Open-Meteo &bull; 49.08&deg;N 6.68&deg;E</div>
+  </div>
+</div>
+
+<!-- ECONOMIES -->
+<div class="card">
+  <div class="card-head">
+    <div class="chi green">&#128176;</div>
+    <div><div class="card-title">&Eacute;conomies</div><div class="card-sub">Gains autoconsommation</div></div>
+  </div>
+  <div class="card-body">
+    <div class="irow">
+      <label>Prix du kWh</label>
+      <input class="fi" type="number" step="0.001" id="prixKwh" value="0.2516" style="width:90px">
+      <span class="sep">&euro;</span>
+      <label>Ann&eacute;e</label>
+      <select class="fi" id="ecoYear" style="width:88px"></select>
+    </div>
+    <div class="sg sg3" style="margin-top:2px">
+      <div class="sb sun"><div class="sv" id="ecoAnnuel">-</div><div class="sl">&Eacute;conomies ann&eacute;e</div></div>
+      <div class="sb green"><div class="sv" id="ecoTotal">-</div><div class="sl">Total cumul&eacute;</div></div>
+      <div class="sb blue"><div class="sv" id="ecoMoyen">-</div><div class="sl">Gain mensuel</div></div>
+      <div class="sb plain"><div class="sv" id="ecoCo2">-</div><div class="sl">&#127807; CO&#8322; &eacute;vit&eacute;</div></div>
+      <div class="sb plain"><div class="sv" id="ecoArbre">-</div><div class="sl">&#127795; Arbres eq.</div></div>
+      <div class="sb plain"><div class="sv" id="ecoKm">-</div><div class="sl">&#128664; km &eacute;vit&eacute;s</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ANNIVERSAIRE -->
+<div class="card">
+  <div class="card-head">
+    <div class="chi indigo">&#128197;</div>
+    <div><div class="card-title">Ann&eacute;e Anniversaire</div><div class="card-sub">P&eacute;riodes de contrat EDF OA</div></div>
+  </div>
+  <div class="card-body">
+    <div class="banner orange">
+      <div class="banner-ico">&#128161;</div>
+      <div class="banner-body">
+        <strong>Date de d&eacute;but de contrat</strong>
+        <small>Chaque ligne = 1 ann&eacute;e anniversaire. Le tarif appliqu&eacute; est issu de la section Revente ci-dessous.</small>
+      </div>
+    </div>
+    <div class="irow">
+      <label>Date de d&eacute;but</label>
+      <input type="date" class="fi" id="contratDate" onchange="calcContrat()">
+      <button class="btn-add" onclick="calcContrat()">Calculer</button>
+    </div>
+    <div id="annivList" class="anniv-list" style="display:none"></div>
+  </div>
+</div>
+
+<!-- REVENTE -->
+<div class="card">
+  <div class="card-head">
+    <div class="chi sun">&#128184;</div>
+    <div><div class="card-title">Revente EDF OA</div><div class="card-sub">Revenus surplus inject&eacute;</div></div>
+  </div>
+  <div class="card-body">
+
+    <div class="slabel"><span class="slabel-num">1</span>Tarifs de rachat</div>
+    <div class="banner orange">
+      <div class="banner-ico">&#128203;</div>
+      <div class="banner-body">
+        <strong>Renseignez vos tarifs EDF OA</strong>
+        <small>Le tarif figure sur vos autofactures &mdash; il change chaque ann&eacute;e anniversaire</small>
+      </div>
+    </div>
+    <div id="tarifRows"></div>
+    <button class="add-btn" onclick="addTarifRow(null,null,true);saveSettings();">&#65291; Ajouter un tarif</button>
+
+    <div class="divider"></div>
+    <div class="slabel"><span class="slabel-num">2</span>Param&egrave;tres</div>
+    <div class="irow">
+      <label>% surplus revendu</label>
+      <input class="fi" type="number" id="pctRevendu" value="100" min="0" max="100" style="width:66px">
+      <span class="sep">%</span>
+      <label>Plafond</label>
+      <input class="fi" type="number" id="plafondKwh" value="4440" style="width:80px">
+      <span class="sep">kWh/an</span>
+    </div>
+
+    <div class="divider"></div>
+    <div class="slabel"><span class="slabel-num">3</span>P&eacute;riode</div>
+    <div class="irow">
+      <label>Ann&eacute;e</label>
+      <select class="fi" id="reventeYear" style="width:90px"></select>
+    </div>
+    <div id="tarifActifWrap" style="display:none">
+      <div class="banner green">
+        <div class="banner-ico">&#10003;</div>
+        <div class="banner-body" id="tarifActif" style="font-weight:600"></div>
+      </div>
+    </div>
+    <div id="tarifManquantWrap" style="display:none">
+      <div class="banner red">
+        <div class="banner-ico">&#9888;&#65039;</div>
+        <div class="banner-body" style="color:var(--red);font-weight:600">Tarif non renseign&eacute; pour cette ann&eacute;e</div>
+      </div>
+    </div>
+    <div class="banner blue" id="anniversaireLienBanner">
+      <div class="banner-ico">&#8593;</div>
+      <div class="banner-body" id="anniversaireLien"><em>Saisissez votre date anniversaire ci-dessus pour un calcul pr&eacute;cis par p&eacute;riode</em></div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="slabel"><span class="slabel-num">4</span>R&eacute;sultats</div>
+    <div class="sg sg2" style="margin-bottom:10px">
+      <div class="sb sun" style="padding:20px 14px">
+        <div class="sv" id="reventeAnnuel" style="font-size:1.5em">-</div>
+        <div class="sl" id="lbl_reventeAnnuel">Revenus revente ann&eacute;e</div>
+      </div>
+      <div class="sb teal" style="padding:20px 14px">
+        <div class="sv" id="reventeCumul" style="font-size:1.5em">-</div>
+        <div class="sl" id="lbl_reventeCumul">Total cumul&eacute;</div>
+      </div>
+    </div>
+    <div class="sg sg3">
+      <div class="sb plain"><div class="sv" id="reventeKwh">-</div><div class="sl" id="lbl_reventeKwh">kWh revendus</div></div>
+      <div class="sb plain"><div class="sv" id="reventeMoyen">-</div><div class="sl" id="lbl_reventeMoyen">Gain mensuel</div></div>
+      <div class="sb plain"><div class="sv" id="reventeKwhPlafond">-</div><div class="sl">vs plafond</div></div>
+      <div class="sb plain"><div class="sv" id="reventeEco">-</div><div class="sl" id="lbl_reventeEco">Autoconso &eacute;co.</div></div>
+      <div class="sb blue" style="grid-column:span 2">
+        <div class="sv" id="reventeTotal">-</div>
+        <div class="sl" id="lbl_reventeTotal">&#128176; Gain total (revente + autoconso)</div>
+      </div>
+    </div>
+    <div id="reventeAnnivResults" style="display:none;margin-top:14px">
+      <div class="slabel" style="margin-bottom:8px">D&eacute;tail par ann&eacute;e anniversaire</div>
+      <div id="reventeAnnivRows"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ROI -->
+<div class="card">
+  <div class="card-head">
+    <div class="chi purple">&#128200;</div>
+    <div><div class="card-title">Retour sur Investissement</div><div class="card-sub">Rentabilit&eacute; de l&apos;installation</div></div>
+  </div>
+  <div class="card-body">
+    <div class="irow">
+      <label>Co&ucirc;t installation</label>
+      <input class="fi" type="number" id="coutInstall" value="8000" style="width:100px">
+      <span class="sep">&euro;</span>
+      <label>Aides &amp; primes</label>
+      <input class="fi" type="number" id="aidesPrimes" value="0" style="width:90px">
+      <span class="sep">&euro;</span>
+    </div>
+    <div class="roi-track"><div class="roi-fill" id="roiBar" style="width:0%"></div></div>
+    <div class="roi-pct" id="roiPct">0% amorti</div>
+    <div class="sg sg3">
+      <div class="sb plain"><div class="sv" id="roiGainAnnuel">-</div><div class="sl">Gain annuel moyen</div></div>
+      <div class="sb green"><div class="sv" id="roiAnnees">-</div><div class="sl">Ann&eacute;es avant rentabilit&eacute;</div></div>
+      <div class="sb plain"><div class="sv" id="roiDeja">-</div><div class="sl">D&eacute;j&agrave; amorti</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- GRAPHIQUE -->
+<div class="card">
+  <div class="card-head">
+    <div class="chi sun">&#128201;</div>
+    <div><div class="card-title">&Eacute;volution mensuelle</div><div class="card-sub">Production par ann&eacute;e</div></div>
+  </div>
+  <div class="card-body"><canvas id="chart"></canvas></div>
+</div>
+
+<!-- TABLEAU -->
+<div class="card">
+  <div class="card-head">
+    <div class="chi gray">&#9728;&#65039;</div>
+    <div style="flex:1"><div class="card-title">Donn&eacute;es Mensuelles</div><div class="card-sub">Saisie en kWh</div></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn-add" onclick="addYear()">&#65291;</button>
+      <button class="btn-del" onclick="delYear()">&minus;</button>
+    </div>
+  </div>
+  <div class="card-body" style="padding-top:4px">
+    <div class="tbl-wrap">
+      <table><thead><tr id="headerRow"><th>Mois</th></tr></thead><tbody id="tableBody"></tbody></table>
+    </div>
+  </div>
+</div>
+
+</div>
+<script>
+
+
+
+
+var firebaseConfig = {
+    apiKey: "AIzaSyBEWo-9sH-kmEGDwxEbyofH6QCRujxP_nw",
+    authDomain: "solaire-production.firebaseapp.com",
+    databaseURL: "https://solaire-production-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "solaire-production",
+    storageBucket: "solaire-production.firebasestorage.app",
+    messagingSenderId: "207701482412",
+    appId: "1:207701482412:web:af61160972b1db5d467809"
+};
+
+var DEFAULT_YEARS = ['2018','2019','2020','2021','2022','2023','2024','2025','2026'];
+var DEFAULT_VALUES = [
+    ['','48.7','65.4','40.4','57.4','34.9','57','64.6','36.9'],
+    ['','172.1','109.4','140.4','114.1','119.2','78.2','62.8','67.9'],
+    ['','223.5','246.9','237.3','247.4','168.4','172.3','220.7',''],
+    ['','285.4','384.4','316.2','283.3','248.7','242.5','285.3',''],
+    ['','366.9','419.2','321.3','378.7','357.6','289','368.6',''],
+    ['392.7','416.9','358.1','355.5','376.6','433.8','318.5','351.5',''],
+    ['433.8','416','407.4','314.1','428.2','','332.4','308.4',''],
+    ['348.3','338.1','323.3','276.4','357','','312.6','294.8',''],
+    ['288.1','246.1','245.1','258.1','219.6','','186.2','164',''],
+    ['185.7','129','58.8','156.8','150.8','','112','124.7',''],
+    ['91.6','64.7','97.1','53.7','69.2','','45.2','69.8',''],
+    ['39.1','58.8','39.3','34.8','34.9','36.3','37.1','54.7','']
+];
+var MONTHS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+var COLORS  = ['#ff9500','#0071e3','#30d158','#bf5af2','#ff375f','#5e5ce6','#00c7be','#ff9f0a','#8e8e93','#32ade6'];
+var JOURS   = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+var METEO_ICONS = {0:'&#9728;&#65039;',1:'&#127780;&#65039;',2:'&#9925;',3:'&#9729;&#65039;',45:'&#127787;&#65039;',48:'&#127787;&#65039;',51:'&#127746;',53:'&#127746;',55:'&#127783;&#65039;',61:'&#127783;&#65039;',63:'&#127783;&#65039;',65:'&#127783;&#65039;',71:'&#10052;&#65039;',73:'&#10052;&#65039;',75:'&#10052;&#65039;',80:'&#127746;',81:'&#127783;&#65039;',82:'&#9928;&#65039;',95:'&#9928;&#65039;',96:'&#9928;&#65039;',99:'&#9928;&#65039;'};
+
+var years = DEFAULT_YEARS.slice();
+var values = DEFAULT_VALUES.map(function(r){ return r.slice(); });
+var currentToggle = 'month';
+var db = null, saveTimer = null, dataLoaded = false;
+
+// Tarifs contrats : anneeDebut -> tarif
+var tarifContrats = [];
+var anniversaireData = [];
+
+// ===== AUTH =====
+// Détection mode local
+var IS_LOCAL = (location.protocol === 'file:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1');
+
+function initAuth() {
+    if(IS_LOCAL) {
+        // Mode local : pas de Firebase Auth, on utilise localStorage
+        document.getElementById('loginScreen').style.display='none';
+        document.getElementById('logoutBtn').style.display='none';
+        document.getElementById('syncBar').className='sync-bar syncing';
+        document.getElementById('syncText').innerHTML='&#128196; Mode local &mdash; données sauvegardées sur cet appareil';
+        startLocal();
+        return;
+    }
+    // Mode en ligne : Firebase Auth
+    var auth = firebase.auth();
+    auth.onAuthStateChanged(function(user) {
+        if(user) {
+            document.getElementById('loginScreen').style.display='none';
+            document.getElementById('logoutBtn').style.display='inline-block';
+            startFirebase();
+        } else {
+            document.getElementById('loginScreen').style.display='flex';
+            document.getElementById('logoutBtn').style.display='none';
+        }
+    });
+}
+function resetLoginBtn() {
+    var btn=document.getElementById('loginBtn');
+    btn.textContent='Se connecter'; btn.disabled=false; btn.style.opacity='1';
+}
+
+function doLogin() {
+    var e=document.getElementById('loginEmail').value.trim();
+    var p=document.getElementById('loginPassword').value;
+    var er=document.getElementById('loginError');
+    var btn=document.getElementById('loginBtn');
+    er.textContent='';
+
+    if(!e){ er.textContent='Veuillez saisir votre email.'; return; }
+    if(!p){ er.textContent='Veuillez saisir votre mot de passe.'; return; }
+
+    // Vérifier que Firebase Auth est disponible
+    if(typeof firebase === 'undefined' || !firebase.auth) {
+        er.textContent='Erreur : Firebase non chargé. Rechargez la page.';
+        return;
+    }
+
+    btn.textContent='Connexion...'; btn.disabled=true; btn.style.opacity='0.7';
+
+    // Timeout de sécurité : débloquer le bouton après 12 secondes
+    var loginTimeout = setTimeout(function(){
+        resetLoginBtn();
+        er.textContent='Délai dépassé. Vérifiez votre connexion internet et réessayez.';
+    }, 12000);
+
+    try {
+        firebase.auth().signInWithEmailAndPassword(e, p)
+            .then(function(){
+                clearTimeout(loginTimeout);
+                // onAuthStateChanged prend le relais pour cacher l'écran
+            })
+            .catch(function(err){
+                clearTimeout(loginTimeout);
+                resetLoginBtn();
+                var msg='Identifiants invalides. Vérifiez email et mot de passe.';
+                if(err.code==='auth/user-not-found')         msg='Aucun compte trouvé avec cet email.';
+                else if(err.code==='auth/wrong-password')    msg='Mot de passe incorrect.';
+                else if(err.code==='auth/invalid-email')     msg='Format d’email invalide.';
+                else if(err.code==='auth/too-many-requests') msg='Trop de tentatives. Réessayez dans quelques minutes.';
+                else if(err.code==='auth/network-request-failed') msg='Erreur réseau. Vérifiez votre connexion internet.';
+                else if(err.code==='auth/invalid-credential') msg='Identifiants invalides. Vérifiez email et mot de passe.';
+                else msg='Erreur ('+err.code+'). Réessayez.';
+                er.textContent=msg;
+            });
+    } catch(e2) {
+        clearTimeout(loginTimeout);
+        resetLoginBtn();
+        er.textContent='Erreur inattendue. Rechargez la page et réessayez.';
+    }
+}
+function doLogout() { if(confirm('Se déconnecter ?')) firebase.auth().signOut(); }
+
+// ===== SYNC =====
+function setSync(type,msg) {
+    var bar=document.getElementById('syncBar');
+    bar.className='sync-bar '+type;
+    document.getElementById('syncDot').className='dot'+(type==='syncing'?' pulse':'');
+    document.getElementById('syncText').innerHTML=msg;
+}
+
+// ===== FIREBASE =====
+function startFirebase() {
+    try {
+        db = firebase.database();
+        setSync('syncing','Connexion...');
+        var t = setTimeout(function(){ if(!dataLoaded){ setSync('error','&#9888; Firebase lent &mdash; données par défaut'); loadDefaults(); } }, 8000);
+        db.ref('solaire/data').once('value', function(snap) {
+            clearTimeout(t);
+            var saved=snap.val();
+            if(saved && saved.years && saved.values && saved.values.length===12) {
+                years=saved.years; values=saved.values;
+                setSync('synced','Synchronisé &#10003;');
+            } else {
+                years=DEFAULT_YEARS.slice(); values=DEFAULT_VALUES.map(function(r){return r.slice();});
+                db.ref('solaire/data').set({years:years,values:values});
+                setSync('synced','Données initialisées &#10003;');
+            }
+            // Charger les settings EDF OA
+            db.ref('solaire/settings').once('value', function(snap2) {
+                var s=snap2.val();
+                if(s) {
+                    if(s.tarifContrats && s.tarifContrats.length>0) tarifContrats=s.tarifContrats;
+                    if(s.contratDate) {
+                        document.getElementById('contratDate').value=s.contratDate;
+                    }
+                    if(s.pctRevendu) document.getElementById('pctRevendu').value=s.pctRevendu;
+                    if(s.coutInstall) document.getElementById('coutInstall').value=s.coutInstall;
+                    if(s.aidesPrimes) document.getElementById('aidesPrimes').value=s.aidesPrimes;
+                    if(s.prixKwh) document.getElementById('prixKwh').value=s.prixKwh;
+                    if(s.plafondKwh) document.getElementById('plafondKwh').value=s.plafondKwh;
+                    if(s.plafondKwh) document.getElementById('plafondKwh') && (document.getElementById('plafondKwh').value=s.plafondKwh);
+                }
+                dataLoaded=true; render();
+                // Recalculer l'anniversaire si date présente
+                if(s && s.contratDate) calcContrat();
+            });
+        }, function(){ clearTimeout(t); setSync('error','&#9888; Erreur Firebase'); loadDefaults(); });
+    } catch(e){ setSync('error','&#9888; Firebase indisponible'); loadDefaults(); }
+}
+function loadDefaults() { years=DEFAULT_YEARS.slice(); values=DEFAULT_VALUES.map(function(r){return r.slice();}); dataLoaded=true; render(); }
+
+// ===== MODE LOCAL (localStorage) =====
+function startLocal() {
+    try {
+        var raw = localStorage.getItem('solaire_data');
+        if(raw) {
+            var saved = JSON.parse(raw);
+            if(saved.years && saved.values && saved.values.length===12) {
+                years=saved.years; values=saved.values;
+            } else {
+                years=DEFAULT_YEARS.slice(); values=DEFAULT_VALUES.map(function(r){return r.slice();});
+            }
+        } else {
+            years=DEFAULT_YEARS.slice(); values=DEFAULT_VALUES.map(function(r){return r.slice();});
+        }
+        // Charger settings locaux
+        var rawS = localStorage.getItem('solaire_settings');
+        if(rawS) {
+            var s=JSON.parse(rawS);
+            if(s.tarifContrats && s.tarifContrats.length>0) tarifContrats=s.tarifContrats;
+            if(s.contratDate) document.getElementById('contratDate').value=s.contratDate;
+            if(s.pctRevendu)  document.getElementById('pctRevendu').value=s.pctRevendu;
+            if(s.coutInstall) document.getElementById('coutInstall').value=s.coutInstall;
+            if(s.aidesPrimes) document.getElementById('aidesPrimes').value=s.aidesPrimes;
+            if(s.prixKwh)     document.getElementById('prixKwh').value=s.prixKwh;
+        }
+        dataLoaded=true;
+        setSync('synced','&#128196; Mode local — données sur cet appareil &#10003;');
+        render();
+        if(document.getElementById('contratDate').value) calcContrat();
+    } catch(e) {
+        loadDefaults();
+    }
+}
+
+function saveLocal() {
+    try {
+        localStorage.setItem('solaire_data', JSON.stringify({years:years, values:values}));
+    } catch(e) {}
+}
+
+function saveLocalSettings() {
+    try {
+        var s = {
+            tarifContrats: tarifContrats,
+            contratDate: document.getElementById('contratDate').value||'',
+            pctRevendu: document.getElementById('pctRevendu').value||'100',
+            coutInstall: document.getElementById('coutInstall').value||'8000',
+            aidesPrimes: document.getElementById('aidesPrimes').value||'0',
+            prixKwh: document.getElementById('prixKwh').value||'0.2516',
+            plafondKwh: document.getElementById('plafondKwh').value||'4440'
+        };
+        localStorage.setItem('solaire_settings', JSON.stringify(s));
+    } catch(e) {}
+}
+function saveData() {
+    clearTimeout(saveTimer);
+    saveTimer=setTimeout(function(){
+        if(IS_LOCAL) { saveLocal(); setSync('synced','&#128196; Mode local — données sauvegardées &#10003;'); return; }
+        setSync('syncing','Sauvegarde...');
+        if(db) db.ref('solaire/data').set({years:years,values:values}).then(function(){setSync('synced','Synchronisé &#10003;');}).catch(function(){setSync('error','&#9888; Erreur sauvegarde');});
+    },800);
+}
+
+var settingsTimer = null;
+function saveSettings() {
+    clearTimeout(settingsTimer);
+    settingsTimer=setTimeout(function(){
+        if(IS_LOCAL) { saveLocalSettings(); return; }
+        if(!db) return;
+        var s = {
+            tarifContrats: tarifContrats,
+            contratDate: document.getElementById('contratDate').value||'',
+            pctRevendu: document.getElementById('pctRevendu').value||'100',
+            coutInstall: document.getElementById('coutInstall').value||'8000',
+            aidesPrimes: document.getElementById('aidesPrimes').value||'0',
+            prixKwh: document.getElementById('prixKwh').value||'0.2516',
+            plafondKwh: document.getElementById('plafondKwh').value||'4440'
+        };
+        db.ref('solaire/settings').set(s);
+    }, 1000);
+}
+
+// ===== RENDER =====
+function render() {
+    buildHeader(); buildTable(); updateChart(); updateToggle();
+    updateEcoSelect(); updateEco();
+    updateReventeSelect(); updateRevente();
+    updateROI();
+    if(!document.getElementById('tarifRows').children.length) initTarifRows();
+}
+
+// ===== CALCULS =====
+function yearTotal(j) { var t=0,has=false; values.forEach(function(r){ var v=parseFloat(r&&r[j]); if(!isNaN(v)&&v>0){t+=v;has=true;} }); return has?t:0; }
+function yearAvg(j)   { var t=0,c=0; values.forEach(function(r){ var v=parseFloat(r&&r[j]); if(!isNaN(v)&&v>0){t+=v;c++;} }); return c>0?t/c:0; }
+function monthAvg(i)  { var t=0,c=0; years.forEach(function(_,j){ var v=parseFloat(values[i]&&values[i][j]); if(!isNaN(v)&&v>0){t+=v;c++;} }); return c>0?t/c:0; }
+function fe(n)        { return n>=1000?(n/1000).toFixed(2)+'k€':n.toFixed(2)+'€'; }
+
+// ===== TABLE =====
+function buildHeader() {
+    var row=document.getElementById('headerRow');
+    while(row.children.length>1) row.removeChild(row.lastChild);
+    years.forEach(function(yr){ var th=document.createElement('th'); th.textContent=yr; row.appendChild(th); });
+}
+function buildTable() {
+    var tbody=document.getElementById('tableBody'); tbody.innerHTML='';
+    MONTHS.forEach(function(m,i){
+        var tr=document.createElement('tr');
+        var html='<td class="mc">'+m+'</td>';
+        years.forEach(function(_,j){ var v=(values[i]&&values[i][j])||''; html+='<td><input type="number" step="0.1" value="'+v+'" data-m="'+i+'" data-y="'+j+'" placeholder="-"></td>'; });
+        tr.innerHTML=html; tbody.appendChild(tr);
+    });
+    var sep=document.createElement('tr'); sep.innerHTML='<td colspan="'+(years.length+1)+'" style="height:10px;border:none;background:#f5f5f7;"></td>'; tbody.appendChild(sep);
+    var tr=document.createElement('tr'); tr.className='tot-row';
+    var th='<td class="mc">Total annuel</td>';
+    years.forEach(function(_,j){ th+='<td>'+fmt(yearTotal(j))+'</td>'; }); tr.innerHTML=th; tbody.appendChild(tr);
+    var tr2=document.createElement('tr'); tr2.className='avg-row';
+    var ah='<td class="mc">Moy. mensuelle</td>';
+    years.forEach(function(_,j){ ah+='<td>'+fmt(yearAvg(j))+'</td>'; }); tr2.innerHTML=ah; tbody.appendChild(tr2);
+    document.querySelectorAll('input[type=number]').forEach(function(inp){
+        inp.addEventListener('change',function(){
+            var mi=+this.dataset.m, yi=+this.dataset.y;
+            if(!values[mi]) values[mi]=[];
+            values[mi][yi]=this.value;
+            var el=this; el.classList.add('saved'); setTimeout(function(){el.classList.remove('saved');},1500);
+            updateTotals(); updateChart(); updateToggle(); updateEco(); updateRevente(); updateROI();
+            saveData();
+        });
+    });
+}
+function fmt(n){ return n>0?n.toFixed(1):'-'; }
+function updateTotals() {
+    var tc=document.querySelectorAll('.total-row td'), ac=document.querySelectorAll('.average-row td');
+    years.forEach(function(_,j){ tc[j+1].textContent=fmt(yearTotal(j)); ac[j+1].textContent=fmt(yearAvg(j)); });
+}
+function addYear() { var ny=(parseInt(years[years.length-1])+1).toString(); years.push(ny); values.forEach(function(r){r.push('');}); render(); saveData(); }
+function delYear() { if(years.length<=1){alert('Impossible.');return;} if(!confirm('Supprimer '+years[years.length-1]+' ?')) return; years.pop(); values.forEach(function(r){r.pop();}); render(); saveData(); }
+
+// ===== TOGGLE =====
+function setToggle(type) {
+    currentToggle=type;
+    ['month','avg','year','monthavg'].forEach(function(t){ document.getElementById('btn-'+t).classList.toggle('on',t===type); });
+    updateToggle();
+}
+function updateToggle() {
+    var el=document.getElementById('toggleResult');
+    if(currentToggle==='month') {
+        var max=0,nm='-',yr='-';
+        values.forEach(function(r,i){ r.forEach(function(v,j){ var n=parseFloat(v); if(!isNaN(n)&&n>max){max=n;nm=MONTHS[i];yr=years[j];} }); });
+        el.innerHTML='Meilleur mois : <strong>'+nm+'</strong> en <strong>'+yr+'</strong> &mdash; <strong style="color:#ff9500">'+max.toFixed(1)+' kWh</strong>';
+    } else if(currentToggle==='avg') {
+        var mxA=0,bM='-';
+        MONTHS.forEach(function(m,i){ var a=monthAvg(i); if(a>mxA){mxA=a;bM=m;} });
+        el.innerHTML='Meilleure moyenne : <strong>'+bM+'</strong> &mdash; <strong style="color:#ff9500">'+mxA.toFixed(1)+' kWh</strong>';
+    } else if(currentToggle==='year') {
+        var mxT=0,bY='-';
+        years.forEach(function(yr,j){ var t=yearTotal(j); if(t>mxT){mxT=t;bY=yr;} });
+        el.innerHTML='Meilleure année : <strong>'+bY+'</strong> &mdash; <strong style="color:#ff9500">'+mxT.toFixed(1)+' kWh</strong>';
+    } else {
+        var rows=MONTHS.map(function(m,i){return{n:m,a:monthAvg(i)};}).sort(function(a,b){return b.a-a.a;});
+        var html='<div style="display:flex;flex-wrap:wrap;gap:6px;width:100%">';
+        rows.forEach(function(r,i){ var op=Math.max(0.12,1-i*0.08); html+='<span style="background:rgba(255,149,0,'+op+');color:'+(i<5?'white':'#1d1d1f')+';padding:5px 11px;border-radius:8px;font-size:0.83em;font-weight:500">'+r.n+' : '+r.a.toFixed(1)+'</span>'; });
+        el.innerHTML=html+'</div>';
+    }
+}
+
+// ===== ECONOMIES =====
+function updateEcoSelect() {
+    var sel=document.getElementById('ecoYear'), cur=sel.value; sel.innerHTML='';
+    var o=document.createElement('option'); o.value='all'; o.textContent='Toutes'; sel.appendChild(o);
+    years.forEach(function(yr){ var op=document.createElement('option'); op.value=yr; op.textContent=yr; sel.appendChild(op); });
+    sel.value=(cur&&(cur==='all'||years.indexOf(cur)>=0))?cur:(years[years.length-2]||years[0]);
+}
+function updateEco() {
+    var prix=parseFloat(document.getElementById('prixKwh').value)||0.25;
+    var selY=document.getElementById('ecoYear').value;
+    var kwh=0;
+    if(selY==='all'){years.forEach(function(_,j){kwh+=yearTotal(j);});}
+    else{var j=years.indexOf(selY);if(j>=0)kwh=yearTotal(j);}
+    var totalAll=0; years.forEach(function(_,j){totalAll+=yearTotal(j);});
+    var eco=kwh*prix, ecoAll=totalAll*prix, moy=eco/12;
+    var co2=kwh*0.453;
+    document.getElementById('ecoAnnuel').textContent=fe(eco);
+    document.getElementById('ecoTotal').textContent=fe(ecoAll);
+    document.getElementById('ecoMoyen').textContent=fe(moy)+'/mois';
+    document.getElementById('ecoCo2').textContent=co2>=1000?(co2/1000).toFixed(2)+'t':co2.toFixed(1)+'kg';
+    document.getElementById('ecoArbre').textContent=Math.round(co2/22)+' arbres';
+    document.getElementById('ecoKm').textContent=Math.round(co2/0.12).toLocaleString('fr')+' km';
+}
+
+
+// ===== REVENTE LIEE ANNIVERSAIRE =====
+function updateReventeAnniv() {
+    var container=document.getElementById('reventeAnnivRows');
+    var wrapper=document.getElementById('reventeAnnivResults');
+    if(!anniversaireData || anniversaireData.length===0){ wrapper.style.display='none'; return; }
+    var pct=parseFloat(document.getElementById('pctRevendu').value)||100;
+    var prixKwh=parseFloat(document.getElementById('prixKwh').value)||0.25;
+    wrapper.style.display='block';
+    var html='';
+    anniversaireData.forEach(function(a){
+        if(a.kwh<=0){ return; }
+        var t=getTarifForYear(a.year.toString());
+        var tarif=t?t.tarif:null;
+        var kwhR=a.kwh*pct/100;
+        var kwhA=a.kwh*(1-pct/100);
+        var revenus=tarif?kwhR*tarif:null;
+        var eco=kwhA*prixKwh;
+        var total=revenus!=null?revenus+eco:null;
+        var tarifTxt=tarif?tarif.toFixed(4)+'€/kWh':'<span style="color:#ff3b30">Tarif non renseigné</span>';
+        html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-radius:10px;margin-bottom:7px;background:'+(a.isCurrent?'#FFF4E0':'var(--bg)')+';border-left:'+(a.isCurrent?'3px solid var(--sun)':'none')+';">'
+            +'<div><div style="font-size:0.8em;font-weight:600;color:#1d1d1f;">'+a.label+'</div>'
+            +'<div style="font-size:0.75em;color:#6e6e73;margin-top:2px;">'+a.kwh.toFixed(1)+' kWh &mdash; Tarif : '+tarifTxt+'</div></div>'
+            +'<div style="text-align:right;">'
+            +'<div style="font-size:0.95em;font-weight:700;color:#ff9500;">'+(revenus!=null?fe(revenus):'—')+'</div>'
+            +'<div style="font-size:0.74em;color:#6e6e73;">Total gains : '+(total!=null?fe(total):'—')+'</div>'
+            +'</div></div>';
+    });
+    container.innerHTML=html||'<div style="color:#6e6e73;font-size:0.85em;padding:8px">Aucune donnée disponible.</div>';
+}
+
+// ===== REVENTE =====
+function addTarifRow(annee, tarif, push) {
+    if(push) tarifContrats.push({anneeDebut:annee||'',tarif:parseFloat(tarif)||0});
+    var idx = tarifContrats.length - 1;
+    var container = document.getElementById('tarifRows');
+    var row = document.createElement('div');
+    row.className = 'tarif-row';
+    row.innerHTML =
+        '<label>Année début</label>'
+        +'<input type="number" class="fi" style="width:80px" placeholder="ex: 2018" value="'+(annee||'')+'"'
+        +' onchange="tarifContrats['+idx+'].anneeDebut=this.value;updateRevente();updateReventeAnniv();saveSettings();">'
+        +'<label style="margin-left:6px">Tarif rachat</label>'
+        +'<input type="number" step="0.0001" class="fi" style="width:90px" placeholder="0.6307" value="'+(tarif||'')+'"'
+        +' onchange="tarifContrats['+idx+'].tarif=parseFloat(this.value)||0;updateRevente();updateReventeAnniv();saveSettings();">'
+        +'<span style="font-size:.82em;color:var(--sub)">€/kWh</span>'
+        +'<button class="del-mini" onclick="this.parentElement.remove();tarifContrats.splice('+idx+',1);updateRevente();updateReventeAnniv();saveSettings();">&times;</button>';
+    container.appendChild(row);
+}
+
+function initTarifRows() {
+    // Laisser vide — l'utilisateur saisit son propre tarif de contrat
+    document.getElementById('tarifRows').innerHTML='';
+    if(tarifContrats.length===0) {
+        // Ajouter une ligne vide par défaut
+        addTarifRow('','',true);
+        tarifContrats=[{anneeDebut:'',tarif:0}];
+    } else {
+        tarifContrats.forEach(function(t){ addTarifRow(t.anneeDebut,t.tarif,false); });
+    }
+}
+function getTarifForYear(yr) {
+    var best=null, ryInt=parseInt(yr);
+    tarifContrats.forEach(function(t){ var ay=parseInt(t.anneeDebut); if(!isNaN(ay)&&!isNaN(ryInt)&&ay<=ryInt&&(!best||ay>parseInt(best.anneeDebut))) best=t; });
+    return best;
+}
+function updateReventeSelect() {
+    var sel=document.getElementById('reventeYear'), cur=sel.value; sel.innerHTML='';
+    var o=document.createElement('option'); o.value='all'; o.textContent='Toutes'; sel.appendChild(o);
+    years.forEach(function(yr){ var op=document.createElement('option'); op.value=yr; op.textContent=yr; sel.appendChild(op); });
+    sel.value=(cur&&(cur==='all'||years.indexOf(cur)>=0))?cur:(years[years.length-2]||years[0]);
+}
+function updateRevente() {
+    var pct     = parseFloat(document.getElementById('pctRevendu').value)||100;
+    var prixKwh = parseFloat(document.getElementById('prixKwh').value)||0.25;
+    var plafond = parseFloat(document.getElementById('plafondKwh').value)||4440;
+    var selY    = document.getElementById('reventeYear').value;
+
+    // ── helpers ──
+    function setLabel(id, txt) { var el=document.getElementById(id); if(el) el.textContent=txt; }
+    function setHTML(id, html) { var el=document.getElementById(id); if(el) el.innerHTML=html; }
+
+    // ── tarif banner ──
+    var tarifObj = selY!=='all' ? getTarifForYear(selY) : null;
+    var tarif    = tarifObj ? tarifObj.tarif : 0;
+    var actifWrap = document.getElementById('tarifActifWrap');
+    var manqWrap  = document.getElementById('tarifManquantWrap');
+
+    if(selY==='all') {
+        actifWrap.style.display='none'; manqWrap.style.display='none';
+    } else if(tarifObj) {
+        actifWrap.style.display='block'; manqWrap.style.display='none';
+        document.getElementById('tarifActif').textContent =
+            'Tarif appliqué : '+tarif.toFixed(4)+' €/kWh  —  contrat début '+tarifObj.anneeDebut;
+    } else {
+        actifWrap.style.display='none'; manqWrap.style.display='block';
+    }
+
+    if(selY === 'all') {
+        // ── Mode TOUTES : chaque année avec son propre tarif ──
+        setLabel('tarifActif','');
+        var totalKwh=0, totalKwhR=0, totalKwhA=0, totalRev=0, totalEco=0;
+        years.forEach(function(yr,j){
+            var kwh = yearTotal(j); if(kwh<=0) return;
+            var t   = getTarifForYear(yr);
+            var tv  = t ? t.tarif : 0;
+            var kwhR = Math.min(kwh, plafond) * pct/100;
+            var kwhA = kwh * (1-pct/100);
+            totalKwh  += kwh;
+            totalKwhR += kwhR;
+            totalKwhA += kwhA;
+            totalRev  += kwhR * tv;
+            totalEco  += kwhA * prixKwh;
+        });
+        var nbAns = Math.max(1, years.filter(function(_,j){return yearTotal(j)>0;}).length);
+        setLabel('lbl_reventeAnnuel', 'Revenus revente / an (moy.)');
+        setLabel('lbl_reventeCumul',  'Total cumulé revendu');
+        setLabel('lbl_reventeKwh',    'kWh revendus (total)');
+        setLabel('lbl_reventeMoyen',  'Gain mensuel (moy.)');
+        setLabel('lbl_reventeEco',    'Autoconso éco. (total)');
+        setLabel('lbl_reventeTotal',  '💶 Gain total cumulé');
+        document.getElementById('reventeAnnuel').textContent    = fe(totalRev/nbAns);
+        document.getElementById('reventeCumul').textContent     = fe(totalRev);
+        document.getElementById('reventeKwh').textContent       = Math.round(totalKwhR).toLocaleString('fr')+' kWh';
+        document.getElementById('reventeMoyen').textContent     = fe(totalRev/nbAns/12)+'/mois';
+        document.getElementById('reventeKwhPlafond').textContent = Math.round(totalKwhR).toLocaleString('fr')+'/'+Math.round(nbAns*plafond).toLocaleString('fr');
+        document.getElementById('reventeEco').textContent       = fe(totalEco);
+        document.getElementById('reventeTotal').textContent     = fe(totalRev+totalEco);
+    } else {
+        // ── Mode ANNEE spécifique ──
+        var j    = years.indexOf(selY);
+        var kwh  = j>=0 ? yearTotal(j) : 0;
+        var kwhR = Math.min(kwh, plafond) * pct/100;
+        var kwhA = kwh * (1-pct/100);
+        var rev  = kwhR * tarif;
+        var ecoA = kwhA * prixKwh;
+        // Cumul réel toutes années
+        var cumul=0;
+        years.forEach(function(yr,jj){
+            var k=yearTotal(jj); if(k<=0) return;
+            var t=getTarifForYear(yr); var tv=t?t.tarif:0;
+            cumul += Math.min(k,plafond)*(pct/100)*tv;
+        });
+        var pctPlafond = kwh>0 ? Math.min(100,(kwhR/plafond)*100).toFixed(0) : 0;
+        setLabel('lbl_reventeAnnuel', 'Revenus revente '+selY);
+        setLabel('lbl_reventeCumul',  'Total cumulé revendu');
+        setLabel('lbl_reventeKwh',    'kWh revendus '+selY);
+        setLabel('lbl_reventeMoyen',  'Gain mensuel '+selY);
+        setLabel('lbl_reventeEco',    'Autoconso éco. '+selY);
+        document.getElementById('lbl_reventeTotal').innerHTML = '💶 Gain total '+selY;
+        document.getElementById('reventeAnnuel').textContent    = fe(rev);
+        document.getElementById('reventeCumul').textContent     = fe(cumul);
+        document.getElementById('reventeKwh').textContent       = Math.round(kwhR)+' kWh';
+        document.getElementById('reventeMoyen').textContent     = fe(rev/12)+'/mois';
+        document.getElementById('reventeKwhPlafond').textContent = Math.round(kwhR)+' / '+plafond+' kWh ('+pctPlafond+'%)';
+        document.getElementById('reventeEco').textContent       = fe(ecoA);
+        document.getElementById('reventeTotal').textContent     = fe(rev+ecoA);
+    }
+}
+
+
+// ===== ROI =====
+function updateROI() {
+    var cout=parseFloat(document.getElementById('coutInstall').value)||8000;
+    var aides=parseFloat(document.getElementById('aidesPrimes').value)||0;
+    var prixKwh=parseFloat(document.getElementById('prixKwh').value)||0.25;
+    var pct=parseFloat(document.getElementById('pctRevendu').value)||100;
+    var invest=Math.max(1,cout-aides);
+    var gains=[], totalGain=0;
+    years.forEach(function(yr,j){ var kwh=yearTotal(j); if(kwh>0){ var t=getTarifForYear(yr); var tval=t?t.tarif:0.04; var g=kwh*(1-pct/100)*prixKwh+kwh*(pct/100)*tval; gains.push(g); totalGain+=g; } });
+    var avg=gains.length>0?totalGain/gains.length:0;
+    var annees=avg>0?invest/avg:999;
+    var deja=Math.min(totalGain,invest);
+    var pctA=Math.min(100,(deja/invest)*100);
+    document.getElementById('roiBar').style.width=pctA.toFixed(1)+'%';
+    document.getElementById('roiPct').textContent=pctA.toFixed(1)+'% amorti';
+    document.getElementById('roiGainAnnuel').textContent=fe(avg)+'/an';
+    document.getElementById('roiAnnees').textContent=annees<50?annees.toFixed(1)+' ans':'+50 ans';
+    document.getElementById('roiDeja').textContent=fe(deja);
+}
+
+// ===== CONTRAT =====
+function calcContrat() {
+    var d=document.getElementById('contratDate').value; if(!d) return; saveSettings();
+    var s=new Date(d), sd=s.getDate(), sm=s.getMonth(), sy=s.getFullYear();
+    var cy=new Date().getFullYear();
+    var container=document.getElementById('annivList');
+    container.innerHTML=''; anniversaireData=[];
+    var pct=parseFloat(document.getElementById('pctRevendu').value)||100;
+    var plafond=parseFloat(document.getElementById('plafondKwh').value)||4440;
+    var prixKwh=parseFloat(document.getElementById('prixKwh').value)||0.25;
+    var totalRev=0, totalEco=0, totalKwhR=0;
+
+    for(var y=sy;y<=cy;y++){
+        var tot=0,has=false;
+        for(var m=0;m<12;m++){
+            var mi=(sm+m)%12, yv=(sm+m)<12?y:y+1;
+            var yi=years.indexOf(yv.toString());
+            if(yi>=0){var v=parseFloat(values[mi]&&values[mi][yi]);if(!isNaN(v)&&v>0){tot+=v;has=true;}}
+        }
+        var isCurrent=(y===cy-1)||(y===cy&&sm>new Date().getMonth());
+        var isFuture=(y===cy&&!isCurrent);
+        var t=getTarifForYear(y.toString());
+        var kwhR=has?Math.min(tot,plafond)*pct/100:0;
+        var kwhA=has?tot*(1-pct/100):0;
+        var rev=has&&t?kwhR*t.tarif:null;
+        var eco=has?kwhA*prixKwh:0;
+        var pctPla=has?Math.min(100,(kwhR/plafond*100)).toFixed(0):0;
+
+        anniversaireData.push({year:y,kwh:has?tot:0,isCurrent:isCurrent});
+        if(rev!=null){totalRev+=rev; totalKwhR+=kwhR; totalEco+=eco;}
+
+        var dS=String(sd).padStart(2,'0')+'/'+String(sm+1).padStart(2,'0')+'/'+y;
+        var dE=String(sd).padStart(2,'0')+'/'+String(sm+1).padStart(2,'0')+'/'+(y+1);
+        var hClass=isCurrent?'current':isFuture?'future':'done';
+        var badge=isCurrent?'En cours ✨':isFuture?'&Agrave; venir':'Termin&eacute;e';
+
+        var el=document.createElement('div');
+        el.className='anniv-card'+(isCurrent?' active':'');
+        el.innerHTML=
+          '<div class="anniv-header '+hClass+'">'
+            +'<div class="anniv-period">'+dS+' &rarr; '+dE+'</div>'
+            +'<span class="anniv-badge">'+badge+'</span>'
+          +'</div>'
+          +'<div class="anniv-body">'
+            +'<div class="anniv-stat">'
+              +'<div class="anniv-val '+(has?'orange':'')+'">'+( has?tot.toFixed(1)+' kWh':'&mdash;')+'</div>'
+              +'<div class="anniv-lbl">Production</div>'
+            +'</div>'
+            +'<div class="anniv-stat">'
+              +'<div class="anniv-val '+(rev!=null?'green':'red')+'">'+( rev!=null?fe(rev):'Tarif manquant')+'</div>'
+              +'<div class="anniv-lbl">Revenus revente</div>'
+            +'</div>'
+            +'<div class="anniv-stat">'
+              +'<div class="anniv-val blue">'+( has?fe(eco):'&mdash;')+'</div>'
+              +'<div class="anniv-lbl">Autoconso &eacute;co.</div>'
+            +'</div>'
+          +'</div>'
+          +'<div class="anniv-footer">'
+            +'<span class="anniv-tarif-label">Tarif rachat</span>'
+            +(t
+              ?'<span class="anniv-tarif-val">'+t.tarif.toFixed(4)+' &euro;/kWh &bull; '+kwhR.toFixed(0)+'/'+(has?Math.round(Math.min(tot,plafond)):plafond)+' kWh ('+pctPla+'%)</span>'
+              :'<span class="anniv-tarif-missing">&#9888; Non renseign&eacute;</span>')
+          +'</div>';
+        container.appendChild(el);
+    }
+    // Update bilan
+    var cur=anniversaireData.find(function(a){return a.isCurrent&&a.kwh>0;});
+    var curT=cur?getTarifForYear(cur.year.toString()):null;
+    var curRev=cur&&curT?Math.min(cur.kwh,plafond)*pct/100*curT.tarif:0;
+    var curEco=cur?cur.kwh*(1-pct/100)*prixKwh:0;
+    var plafondUsed=cur?Math.min(cur.kwh,plafond)*pct/100:0;
+    document.getElementById('reventeAnnuel').textContent=fe(curRev);
+    document.getElementById('reventeCumul').textContent=fe(totalRev);
+    document.getElementById('reventeKwh').textContent=cur?Math.round(plafondUsed)+' kWh':'&mdash;';
+    document.getElementById('reventeKwhPlafond').textContent=cur?Math.round(plafondUsed)+'/'+plafond:'&mdash;';
+    document.getElementById('reventeMoyen').textContent=curRev>0?fe(curRev/12)+'/mois':'&mdash;';
+    document.getElementById('reventeEco').textContent=fe(totalEco);
+    document.getElementById('reventeTotal').textContent=fe(totalRev+totalEco);
+    document.getElementById('lbl_reventeAnnuel').textContent=cur?'Revenus année '+cur.year:'Année en cours';
+    document.getElementById('lbl_reventeCumul').textContent='Total cumulé revendu';
+}
+
+
+// ===== CHART =====
+var chartObj=new Chart(document.getElementById('chart').getContext('2d'),{
+    type:'line', data:{labels:MONTHS,datasets:[]},
+    options:{responsive:true,maintainAspectRatio:true,
+        plugins:{legend:{position:'top',labels:{font:{size:11},padding:10,usePointStyle:true}},
+            tooltip:{callbacks:{label:function(c){return c.dataset.label+': '+c.parsed.y+' kWh';}}}},
+        scales:{y:{beginAtZero:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#6e6e73'},title:{display:true,text:'kWh',color:'#6e6e73'}},
+            x:{grid:{display:false},ticks:{color:'#6e6e73'}}}}
+});
+function updateChart() {
+    chartObj.data.datasets=years.map(function(yr,i){
+        return{label:yr,data:values.map(function(r){var v=parseFloat(r&&r[i]);return isNaN(v)?null:v;}),
+            borderColor:COLORS[i%COLORS.length],backgroundColor:COLORS[i%COLORS.length]+'20',
+            borderWidth:2.5,tension:0.4,pointRadius:3,pointHoverRadius:6,spanGaps:false};
+    });
+    chartObj.update();
+}
+
+// ===== METEO =====
+function loadMeteo() {
+    var url='https://api.open-meteo.com/v1/forecast?latitude=49.0833&longitude=6.6833&daily=weathercode,temperature_2m_max,temperature_2m_min,sunshine_duration&timezone=Europe%2FParis&forecast_days=7';
+    fetch(url).then(function(r){return r.json();}).then(function(data){
+        document.getElementById('meteoLoading').style.display='none';
+        var grid=document.getElementById('meteoGrid'); grid.style.display='flex';
+        var today=new Date().toISOString().slice(0,10);
+        data.daily.time.forEach(function(date,i){
+            var isT=date===today, code=data.daily.weathercode[i];
+            var tmax=Math.round(data.daily.temperature_2m_max[i]);
+            var tmin=Math.round(data.daily.temperature_2m_min[i]);
+            var sun=Math.round((data.daily.sunshine_duration[i]||0)/3600);
+            var d=new Date(date+'T12:00:00');
+            var div=document.createElement('div'); div.className='mday'+(isT?' today':'');
+            div.innerHTML='<div class="md">'+(isT?'Auj.':JOURS[d.getDay()])+'</div>'
+                +'<div class="mi">'+(METEO_ICONS[code]||'&#127757;')+'</div>'
+                +'<div class="mt">'+tmax+'&deg; / '+tmin+'&deg;</div>'
+                +'<div class="ms">&#9728;&#65039; '+sun+'h</div>';
+            grid.appendChild(div);
+        });
+    }).catch(function(){ document.getElementById('meteoLoading').textContent='&#9888; Météo indisponible'; });
+}
+
+// ===== EVENT LISTENERS =====
+document.getElementById('prixKwh').addEventListener('input',function(){ updateEco(); updateRevente(); updateReventeAnniv(); updateROI(); saveSettings(); });
+document.getElementById('ecoYear').addEventListener('change', updateEco);
+document.getElementById('pctRevendu').addEventListener('input',function(){ updateRevente(); updateReventeAnniv(); updateROI(); saveSettings(); });
+document.getElementById('plafondKwh').addEventListener('input',function(){ updateRevente(); updateReventeAnniv(); saveSettings(); });
+document.getElementById('reventeYear').addEventListener('change', updateRevente);
+document.getElementById('coutInstall').addEventListener('input', function(){ updateROI(); saveSettings(); });
+document.getElementById('aidesPrimes').addEventListener('input', function(){ updateROI(); saveSettings(); });
+
+// ===== START =====
+// S'assurer que Firebase est bien initialisé avant tout
+try {
+    firebase.initializeApp(firebaseConfig);
+    initAuth();
+} catch(initErr) {
+    document.getElementById('syncBar').className='sync-bar error';
+    document.getElementById('syncText').textContent='Firebase non disponible — rechargez la page';
+    document.getElementById('loginError').textContent='Erreur de connexion Firebase. Rechargez la page.';
+}
+loadMeteo();
+
+
+
+
+
+// ===== PWA =====
+// Service Worker
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+        navigator.serviceWorker.register('./sw.js')
+            .then(function(reg){ console.log('SW registered:', reg.scope); })
+            .catch(function(err){ console.log('SW error:', err); });
+    });
+}
+
+// Install prompt (Android/Chrome)
+var deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    showInstallBanner();
+});
+
+function showInstallBanner() {
+    if (document.getElementById('installBanner')) return;
+    var bar = document.createElement('div');
+    bar.id = 'installBanner';
+    bar.innerHTML = '<span style="flex:1">&#128241; Installer l'app sur votre &eacute;cran d'accueil</span>'
+        + '<button onclick="installPWA()" style="background:var(--sun);color:#fff;border:none;padding:6px 14px;border-radius:20px;font-size:.8em;font-weight:700;cursor:pointer;white-space:nowrap">Installer</button>'
+        + '<button onclick="this.parentElement.remove()" style="background:none;border:none;font-size:1.1em;cursor:pointer;color:var(--sub);padding:0 4px">&times;</button>';
+    bar.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 16px;'
+        + 'background:#fff;border-bottom:1px solid var(--border);font-size:.82em;'
+        + 'position:sticky;top:40px;z-index:99;box-shadow:0 2px 8px rgba(0,0,0,.08)';
+    document.body.insertBefore(bar, document.getElementById('syncBar').nextSibling);
+}
+
+function installPWA() {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function(r){
+        if (r.outcome === 'accepted') document.getElementById('installBanner').remove();
+        deferredPrompt = null;
+    });
+}
+
+// iOS : show manual install tip (no beforeinstallprompt on Safari)
+var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+var isStandalone = window.navigator.standalone === true;
+if (isIOS && !isStandalone) {
+    setTimeout(function() {
+        var tip = document.createElement('div');
+        tip.id = 'iosTip';
+        tip.innerHTML = '<span style="font-size:1.1em">&#128241;</span>'
+            + '<span style="flex:1">Pour installer : appuyez sur <strong>&#9141;</strong> puis <strong>"Sur l'&eacute;cran d'accueil"</strong></span>'
+            + '<button onclick="this.parentElement.style.display='none'" style="background:none;border:none;font-size:1.1em;cursor:pointer;color:var(--sub)">&times;</button>';
+        tip.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 16px;'
+            + 'background:#E8F0FE;border-bottom:1px solid var(--blue);font-size:.8em;'
+            + 'position:sticky;top:40px;z-index:99';
+        document.body.insertBefore(tip, document.getElementById('syncBar').nextSibling);
+        setTimeout(function(){ if(tip.parentElement) tip.style.display='none'; }, 8000);
+    }, 2000);
+}
+
+// Dark mode
+var mq = window.matchMedia('(prefers-color-scheme: dark)');
+function applyDark(dark) {
+    var r = document.documentElement.style;
+    if (dark) {
+        r.setProperty('--bg',     '#1C1C1E');
+        r.setProperty('--bg2',    '#2C2C2E');
+        r.setProperty('--card',   '#2C2C2E');
+        r.setProperty('--text',   '#FFFFFF');
+        r.setProperty('--sub',    '#8E8E93');
+        r.setProperty('--border', '#3A3A3C');
+    } else {
+        r.removeProperty('--bg');   r.removeProperty('--bg2');
+        r.removeProperty('--card'); r.removeProperty('--text');
+        r.removeProperty('--sub');  r.removeProperty('--border');
+    }
+}
+applyDark(mq.matches);
+mq.addEventListener('change', function(e){ applyDark(e.matches); });
+
+</script>
+</body>
+</html>

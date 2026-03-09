@@ -1,0 +1,28 @@
+{
+  "name": "Production Solaire",
+  "short_name": "Solaire",
+  "description": "Suivi production solaire, revente EDF OA et ROI",
+  "start_url": "./production_solaire_v6.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FF9500",
+  "theme_color": "#FF9500",
+  "lang": "fr",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "screenshots": [
+    { "src": "screenshot.png", "sizes": "390x844", "type": "image/png", "form_factor": "narrow" }
+  ],
+  "categories": ["utilities", "finance"],
+  "shortcuts": [
+    {
+      "name": "Saisir production",
+      "short_name": "Saisir",
+      "description": "Accès direct au tableau de saisie",
+      "url": "./production_solaire_v6.html#tableau",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
