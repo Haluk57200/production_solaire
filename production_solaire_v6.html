@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Production Solaire</title>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Solaire">
+    <meta name="theme-color" content="#ff9500">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif; background:#f5f5f7; }
+        .sync-bar { display:flex; align-items:center; justify-content:center; gap:8px; padding:9px 16px; font-size:0.82em; font-weight:600; }
+        .sync-bar.synced  { background:#d1fae5; color:#065f46; }
+        .sync-bar.syncing { background:#fef3c7; color:#92400e; }
+        .sync-bar.error   { background:#fee2e2; color:#991b1b; }
+        .dot { width:8px; height:8px; border-radius:50%; background:currentColor; }
+        .dot.pulse { animation:pulse 1.2s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.2} }
+        .hero { background:linear-gradient(160deg,#ff9500,#ffcc00); padding:36px 20px 55px; text-align:center; }
+        .hero-icon { font-size:3.2em; display:block; margin-bottom:8px; }
+        .hero h1 { color:white; font-size:clamp(1.5em,5vw,2.5em); font-weight:700; letter-spacing:-0.03em; }
+        .hero p { color:rgba(255,255,255,0.85); margin-top:5px; }
+        .container { max-width:1200px; margin:-10px auto 0; padding:0 16px 80px; }
+        .card { background:white; border-radius:18px; padding:20px; margin-bottom:20px; box-shadow:0 2px 16px rgba(0,0,0,0.07); }
+        .card-title { font-size:1.1em; font-weight:700; color:#1d1d1f; margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid #f2f2f7; }
+        .toggle-buttons { display:flex; gap:8px; flex-wrap:wrap; }
+        .toggle-btn { flex:1; min-width:110px; padding:10px 10px; border-radius:10px; border:1.5px solid #e0e0e0; background:#f5f5f7; color:#1d1d1f; font-size:0.82em; font-weight:500; cursor:pointer; transition:all 0.2s; }
+        .toggle-btn.active { background:#ff9500; border-color:#ff9500; color:white; }
+        .toggle-result { margin-top:14px; padding:14px 16px; background:#fff9ec; border-radius:10px; border-left:4px solid #ff9500; font-size:0.92em; color:#1d1d1f; min-height:46px; display:flex; align-items:center; flex-wrap:wrap; gap:6px; }
+        .contrat-inputs { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+        .contrat-inputs label { font-size:0.85em; color:#6e6e73; }
+        .contrat-inputs input[type=date] { padding:10px 12px; border:1.5px solid #e0e0e0; border-radius:10px; font-size:0.9em; background:#f5f5f7; outline:none; }
+        .calc-btn { background:#0071e3; color:white; border:none; padding:10px 18px; border-radius:10px; font-size:0.9em; font-weight:500; cursor:pointer; }
+        .contrat-results { margin-top:14px; display:none; }
+        .contrat-year-item { display:flex; justify-content:space-between; padding:10px 14px; border-radius:10px; margin-bottom:8px; background:#f5f5f7; font-size:0.9em; }
+        .contrat-year-item.current { background:#fff9ec; border-left:4px solid #ff9500; font-weight:600; }
+        .contrat-year-value { color:#ff9500; font-weight:700; }
+        canvas { max-height:380px; }
+        .table-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px; }
+        .btn-row { display:flex; gap:8px; }
+        .action-btn { background:#0071e3; color:white; border:none; padding:10px 16px; border-radius:10px; font-size:0.85em; font-weight:500; cursor:pointer; }
+        .del-btn { background:#ff3b30; color:white; border:none; padding:10px 16px; border-radius:10px; font-size:0.85em; font-weight:500; cursor:pointer; }
+        .table-container { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+        table { width:100%; border-collapse:collapse; min-width:600px; }
+        th { background:#f5f5f7; color:#6e6e73; padding:12px 8px; text-align:center; font-weight:600; font-size:0.78em; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #e5e5ea; }
+        td { padding:10px 6px; text-align:center; border-bottom:1px solid #f2f2f7; }
+        tbody tr:nth-child(even) { background:#fafafa; }
+        tbody tr:hover { background:#fff9ec; }
+        .month-cell { font-weight:600; color:#1d1d1f; text-align:left; padding-left:14px; font-size:0.88em; white-space:nowrap; }
+        .total-row { background:#fff9ec !important; }
+        .total-row td { color:#c07000; font-weight:700; font-size:0.88em; }
+        .average-row { background:#edf5ff !important; }
+        .average-row td { color:#0055b3; font-weight:700; font-size:0.88em; }
+        input[type=number] { width:68px; padding:7px 2px; border:1.5px solid transparent; border-radius:8px; text-align:center; font-size:0.86em; background:transparent; -moz-appearance:textfield; }
+        input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; }
+        input[type=number]:focus { outline:none; border-color:#0071e3; background:white; }
+        input[type=number].saved { border-color:#30d158; background:#f0fff4; transition:all 0.3s; }
+
+        /* LOGIN */
+        .login-screen { position:fixed; top:0; left:0; width:100%; height:100%; background:linear-gradient(160deg,#ff9500,#ffcc00); display:flex; align-items:center; justify-content:center; z-index:9999; }
+        .login-box { background:white; border-radius:24px; padding:36px 28px; width:100%; max-width:360px; margin:16px; box-shadow:0 20px 60px rgba(0,0,0,0.15); text-align:center; }
+        .login-icon { font-size:3em; margin-bottom:10px; }
+        .login-title { font-size:1.4em; font-weight:700; color:#1d1d1f; margin-bottom:4px; }
+        .login-sub { font-size:0.88em; color:#6e6e73; margin-bottom:24px; }
+        .login-input { width:100%; padding:14px 16px; border:1.5px solid #e0e0e0; border-radius:12px; font-size:0.95em; margin-bottom:12px; outline:none; background:#f5f5f7; transition:border 0.2s; }
+        .login-input:focus { border-color:#ff9500; background:white; }
+        .login-btn { width:100%; padding:14px; background:#ff9500; color:white; border:none; border-radius:12px; font-size:1em; font-weight:600; cursor:pointer; transition:background 0.2s; margin-top:4px; }
+        .login-btn:hover { background:#e08800; }
+        .login-error { color:#ff3b30; font-size:0.85em; margin-top:10px; min-height:20px; }
+        .logout-btn { background:none; border:1px solid rgba(255,255,255,0.5); color:white; padding:5px 12px; border-radius:8px; font-size:0.78em; cursor:pointer; margin-left:10px; }
+
+        /* ECONOMIES */
+        .eco-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:14px; }
+        .eco-card { background:#f5f5f7; border-radius:14px; padding:16px 12px; text-align:center; }
+        .eco-card.highlight { background:linear-gradient(135deg,#ff9500,#ffcc00); }
+        .eco-card.highlight .eco-value { color:white; }
+        .eco-card.highlight .eco-label { color:rgba(255,255,255,0.85); }
+        .eco-card.green { background:linear-gradient(135deg,#30d158,#34c759); }
+        .eco-card.green .eco-value { color:white; }
+        .eco-card.green .eco-label { color:rgba(255,255,255,0.85); }
+        .eco-card.blue { background:linear-gradient(135deg,#0071e3,#32ade6); }
+        .eco-card.blue .eco-value { color:white; }
+        .eco-card.blue .eco-label { color:rgba(255,255,255,0.85); }
+        .eco-value { font-size:1.4em; font-weight:700; color:#1d1d1f; }
+        .eco-label { font-size:0.75em; color:#6e6e73; margin-top:4px; font-weight:500; }
+        .eco-inputs { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:4px; }
+        .eco-inputs label { font-size:0.85em; color:#6e6e73; font-weight:500; }
+        .eco-input { padding:10px 12px; border:1.5px solid #e0e0e0; border-radius:10px; font-size:0.9em; background:#f5f5f7; width:110px; outline:none; }
+        .eco-input:focus { border-color:#ff9500; background:white; }
+        .eco-hint { font-size:0.78em; color:#6e6e73; margin-top:10px; }
+        @media(max-width:500px) { .eco-grid { grid-template-columns:repeat(2,1fr); } }
+        @media(max-width:600px) { input[type=number]{width:52px;} .toggle-btn{font-size:0.76em;padding:8px 6px;} }
+    </style>
+</head>
+<body>
+
+
+<!-- LOGIN SCREEN -->
+<div class="login-screen" id="loginScreen">
+    <div class="login-box">
+        <div class="login-icon">&#9728;&#65039;</div>
+        <div class="login-title">Production Solaire</div>
+        <div class="login-sub">Connectez-vous pour acc&#233;der &#224; vos donn&#233;es</div>
+        <input class="login-input" type="email" id="loginEmail" placeholder="Email" autocomplete="email">
+        <input class="login-input" type="password" id="loginPassword" placeholder="Mot de passe" autocomplete="current-password">
+        <button class="login-btn" onclick="doLogin()">Se connecter</button>
+        <div class="login-error" id="loginError"></div>
+    </div>
+</div>
+
+<div class="sync-bar syncing" id="syncBar">
+    <div class="dot pulse" id="syncDot"></div>
+    <span id="syncText">Connexion Firebase...</span>
+    <button class="logout-btn" onclick="doLogout()" id="logoutBtn" style="display:none">D&#233;connexion</button>
+</div>
+
+<div class="hero">
+    <span class="hero-icon">&#9728;&#65039;</span>
+    <h1>Production d&#39;&Eacute;nergie Solaire</h1>
+    <p>Suivi mensuel synchronis&#233; en temps r&#233;el</p>
+</div>
+
+<div class="container">
+    <div class="card">
+        <div class="card-title">&#128269; Statistiques avanc&#233;es</div>
+        <div class="toggle-buttons">
+            <button class="toggle-btn active" id="btn-month" onclick="setToggle('month')">&#127765; Meilleur Mois</button>
+            <button class="toggle-btn" id="btn-avg" onclick="setToggle('avg')">&#128200; Meilleure Moy.</button>
+            <button class="toggle-btn" id="btn-year" onclick="setToggle('year')">&#127942; Meilleure Ann&#233;e</button>
+            <button class="toggle-btn" id="btn-monthavg" onclick="setToggle('monthavg')">&#128197; Moy. par Mois</button>
+        </div>
+        <div class="toggle-result" id="toggleResult">Chargement...</div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">&#128203; Ann&#233;e Anniversaire de Contrat</div>
+        <div class="contrat-inputs">
+            <label>Date de d&#233;but :</label>
+            <input type="date" id="contratDate" />
+            <button class="calc-btn" onclick="calcContrat()">Calculer</button>
+        </div>
+        <div class="contrat-results" id="contratResults"></div>
+    </div>
+
+
+    <!-- ECONOMIES -->
+    <div class="card">
+        <div class="card-title">&#128176; Economies &amp; Gains Financiers</div>
+        <div class="eco-inputs">
+            <label>Prix du kWh :</label>
+            <input class="eco-input" type="number" step="0.001" id="prixKwh" value="0.2516" placeholder="0.25">
+            <label>&euro;</label>
+            <label style="margin-left:8px">Ann&#233;e :</label>
+            <select class="eco-input" id="ecoYear" style="width:90px"></select>
+        </div>
+        <div class="eco-grid" id="ecoGrid">
+            <div class="eco-card highlight"><div class="eco-value" id="ecoAnnuel">-</div><div class="eco-label">Economies ann&#233;e</div></div>
+            <div class="eco-card green"><div class="eco-value" id="ecoTotal">-</div><div class="eco-label">Total cumul&#233; (toutes ann&#233;es)</div></div>
+            <div class="eco-card blue"><div class="eco-value" id="ecoMoyen">-</div><div class="eco-label">Gain mensuel moyen</div></div>
+            <div class="eco-card"><div class="eco-value" id="ecoCo2">-</div><div class="eco-label">&#127807; CO&#8322; &#233;vit&#233; (ann&#233;e)</div></div>
+            <div class="eco-card"><div class="eco-value" id="ecoArbre">-</div><div class="eco-label">&#127795; Arbres &#233;quivalents</div></div>
+            <div class="eco-card"><div class="eco-value" id="ecoKm">-</div><div class="eco-label">&#128664; km en voiture &#233;vit&#233;s</div></div>
+        </div>
+        <div class="eco-hint">* Basé sur 0,453 kg CO&#8322;/kWh (mix &#233;lectrique europ&#233;en) &mdash; 1 arbre absorbe ~22 kg CO&#8322;/an &mdash; voiture moyenne 120g CO&#8322;/km</div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">&#128200; &#201;volution mensuelle par ann&#233;e</div>
+        <canvas id="chart"></canvas>
+    </div>
+
+    <div class="card">
+        <div class="table-header">
+            <div class="card-title" style="margin:0;border:none;padding:0">&#9728;&#65039; Donn&#233;es Mensuelles</div>
+            <div class="btn-row">
+                <button class="action-btn" onclick="addYear()">&#65291; Ann&#233;e</button>
+                <button class="del-btn" onclick="delYear()">&#8722; Ann&#233;e</button>
+            </div>
+        </div>
+        <div class="table-container">
+            <table><thead><tr id="headerRow"><th>Mois</th></tr></thead><tbody id="tableBody"></tbody></table>
+        </div>
+    </div>
+</div>
+
+<script>
+// ===================== FIREBASE CONFIG =====================
+var firebaseConfig = {
+    apiKey: "AIzaSyBEWo-9sH-kmEGDwxEbyofH6QCRujxP_nw",
+    authDomain: "solaire-production.firebaseapp.com",
+    databaseURL: "https://solaire-production-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "solaire-production",
+    storageBucket: "solaire-production.firebasestorage.app",
+    messagingSenderId: "207701482412",
+    appId: "1:207701482412:web:af61160972b1db5d467809"
+};
+// ===========================================================
+
+// DONNEES PAR DEFAUT (vos données V5)
+var DEFAULT_YEARS = ['2018','2019','2020','2021','2022','2023','2024','2025','2026'];
+var DEFAULT_VALUES = [
+    ['','48.7','65.4','40.4','57.4','34.9','57','64.6','36.9'],
+    ['','172.1','109.4','140.4','114.1','119.2','78.2','62.8','67.9'],
+    ['','223.5','246.9','237.3','247.4','168.4','172.3','220.7',''],
+    ['','285.4','384.4','316.2','283.3','248.7','242.5','285.3',''],
+    ['','366.9','419.2','321.3','378.7','357.6','289','368.6',''],
+    ['392.7','416.9','358.1','355.5','376.6','433.8','318.5','351.5',''],
+    ['433.8','416','407.4','314.1','428.2','','332.4','308.4',''],
+    ['348.3','338.1','323.3','276.4','357','','312.6','294.8',''],
+    ['288.1','246.1','245.1','258.1','219.6','','186.2','164',''],
+    ['185.7','129','58.8','156.8','150.8','','112','124.7',''],
+    ['91.6','64.7','97.1','53.7','69.2','','45.2','69.8',''],
+    ['39.1','58.8','39.3','34.8','34.9','36.3','37.1','54.7','']
+];
+
+var MONTHS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+var COLORS = ['#ff9500','#0071e3','#30d158','#bf5af2','#ff375f','#5e5ce6','#00c7be','#ff9f0a','#8e8e93','#32ade6'];
+
+var years = DEFAULT_YEARS.slice();
+var values = DEFAULT_VALUES.map(function(r){ return r.slice(); });
+var currentToggle = 'month';
+var db = null;
+var saveTimer = null;
+var dataLoaded = false;
+
+// ===== SYNC STATUS =====
+function setSync(type, msg) {
+    var bar=document.getElementById('syncBar');
+    var dot=document.getElementById('syncDot');
+    bar.className='sync-bar '+type;
+    dot.className='dot'+(type==='syncing'?' pulse':'');
+    document.getElementById('syncText').innerHTML=msg;
+}
+
+// ===== FIREBASE =====
+function startFirebase() {
+    try {
+        db = firebase.database();
+        setSync('syncing','Connexion...');
+
+        // Timeout 8s : si Firebase ne répond pas, on charge les défauts
+        var t = setTimeout(function(){
+            if(!dataLoaded) {
+                setSync('error','&#9888; Firebase injoignable &mdash; données par défaut');
+                loadDefaults();
+            }
+        }, 8000);
+
+        db.ref('solaire/data').once('value', function(snap) {
+            clearTimeout(t);
+            var saved = snap.val();
+            if(saved && saved.years && saved.values && saved.values.length === 12) {
+                // Données existantes sur Firebase → on les charge
+                years = saved.years;
+                values = saved.values;
+                setSync('synced','Synchronisé &#10003;');
+            } else {
+                // Firebase vide → on envoie les données par défaut
+                years = DEFAULT_YEARS.slice();
+                values = DEFAULT_VALUES.map(function(r){ return r.slice(); });
+                db.ref('solaire/data').set({ years: years, values: values });
+                setSync('synced','Données initialisées &#10003;');
+            }
+            dataLoaded = true;
+            render();
+        }, function(err) {
+            clearTimeout(t);
+            setSync('error','&#9888; Erreur Firebase &mdash; données par défaut');
+            loadDefaults();
+        });
+    } catch(e) {
+        setSync('error','&#9888; Firebase indisponible');
+        loadDefaults();
+    }
+}
+
+function loadDefaults() {
+    years = DEFAULT_YEARS.slice();
+    values = DEFAULT_VALUES.map(function(r){ return r.slice(); });
+    dataLoaded = true;
+    render();
+}
+
+function saveData() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(function(){
+        setSync('syncing','Sauvegarde...');
+        if(db) {
+            db.ref('solaire/data').set({ years: years, values: values })
+            .then(function(){ setSync('synced','Synchronisé &#10003;'); })
+            .catch(function(){ setSync('error','&#9888; Erreur sauvegarde'); });
+        }
+    }, 800);
+}
+
+// ===== RENDER =====
+function render() {
+    buildHeader();
+    buildTable();
+    updateChart();
+    updateToggle();
+    updateEcoSelect();
+    updateEco();
+}
+
+function buildHeader() {
+    var row = document.getElementById('headerRow');
+    while(row.children.length > 1) row.removeChild(row.lastChild);
+    years.forEach(function(yr){ var th=document.createElement('th'); th.textContent=yr; row.appendChild(th); });
+}
+
+function buildTable() {
+    var tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+    MONTHS.forEach(function(m,i) {
+        var tr = document.createElement('tr');
+        var html = '<td class="month-cell">'+m+'</td>';
+        years.forEach(function(yr,j){
+            var v = (values[i] && values[i][j]) ? values[i][j] : '';
+            html += '<td><input type="number" step="0.1" value="'+v+'" data-m="'+i+'" data-y="'+j+'" placeholder="-"></td>';
+        });
+        tr.innerHTML = html;
+        tbody.appendChild(tr);
+    });
+    // Séparateur
+    var sep=document.createElement('tr');
+    sep.innerHTML='<td colspan="'+(years.length+1)+'" style="height:10px;border:none;background:#f5f5f7;"></td>';
+    tbody.appendChild(sep);
+    // Total
+    var tr=document.createElement('tr'); tr.className='total-row';
+    var th='<td class="month-cell">Total annuel</td>';
+    years.forEach(function(_,j){ th+='<td>'+fmt(yearTotal(j))+'</td>'; });
+    tr.innerHTML=th; tbody.appendChild(tr);
+    // Moyenne
+    var tr2=document.createElement('tr'); tr2.className='average-row';
+    var ah='<td class="month-cell">Moy. mensuelle</td>';
+    years.forEach(function(_,j){ ah+='<td>'+fmt(yearAvg(j))+'</td>'; });
+    tr2.innerHTML=ah; tbody.appendChild(tr2);
+
+    // Événements
+    document.querySelectorAll('input[type=number]').forEach(function(inp){
+        inp.addEventListener('change', function(){
+            var mi=+this.dataset.m, yi=+this.dataset.y;
+            if(!values[mi]) values[mi]=[];
+            values[mi][yi] = this.value;
+            var el=this; el.classList.add('saved');
+            setTimeout(function(){ el.classList.remove('saved'); },1500);
+            updateTotals(); updateChart(); updateToggle(); updateEco();
+            saveData();
+        });
+    });
+}
+
+function fmt(n) { return n>0 ? n.toFixed(1) : '-'; }
+
+function updateTotals() {
+    var tc=document.querySelectorAll('.total-row td');
+    var ac=document.querySelectorAll('.average-row td');
+    years.forEach(function(_,j){ tc[j+1].textContent=fmt(yearTotal(j)); ac[j+1].textContent=fmt(yearAvg(j)); });
+}
+
+// ===== CALCULS =====
+function yearTotal(j) {
+    var t=0,has=false;
+    values.forEach(function(r){ var v=parseFloat(r&&r[j]); if(!isNaN(v)&&v>0){t+=v;has=true;} });
+    return has?t:0;
+}
+function yearAvg(j) {
+    var t=0,c=0;
+    values.forEach(function(r){ var v=parseFloat(r&&r[j]); if(!isNaN(v)&&v>0){t+=v;c++;} });
+    return c>0?t/c:0;
+}
+function monthAvg(i) {
+    var t=0,c=0;
+    years.forEach(function(_,j){ var v=parseFloat(values[i]&&values[i][j]); if(!isNaN(v)&&v>0){t+=v;c++;} });
+    return c>0?t/c:0;
+}
+
+// ===== TOGGLE =====
+function setToggle(type) {
+    currentToggle=type;
+    ['month','avg','year','monthavg'].forEach(function(t){
+        document.getElementById('btn-'+t).classList.toggle('active',t===type);
+    });
+    updateToggle();
+}
+function updateToggle() {
+    var el=document.getElementById('toggleResult');
+    if(currentToggle==='month') {
+        var max=0,nm='-',yr='-';
+        values.forEach(function(r,i){ r.forEach(function(v,j){ var n=parseFloat(v); if(!isNaN(n)&&n>max){max=n;nm=MONTHS[i];yr=years[j];} }); });
+        el.innerHTML='Meilleur mois : <strong>'+nm+'</strong> en <strong>'+yr+'</strong> &mdash; <strong style="color:#ff9500">'+max.toFixed(1)+' kWh</strong>';
+    } else if(currentToggle==='avg') {
+        var mxA=0,bM='-';
+        MONTHS.forEach(function(m,i){ var a=monthAvg(i); if(a>mxA){mxA=a;bM=m;} });
+        el.innerHTML='Meilleure moyenne : <strong>'+bM+'</strong> &mdash; <strong style="color:#ff9500">'+mxA.toFixed(1)+' kWh</strong>';
+    } else if(currentToggle==='year') {
+        var mxT=0,bY='-';
+        years.forEach(function(yr,j){ var t=yearTotal(j); if(t>mxT){mxT=t;bY=yr;} });
+        el.innerHTML='Meilleure année : <strong>'+bY+'</strong> &mdash; <strong style="color:#ff9500">'+mxT.toFixed(1)+' kWh</strong>';
+    } else {
+        var rows=MONTHS.map(function(m,i){ return {n:m,a:monthAvg(i)}; }).sort(function(a,b){ return b.a-a.a; });
+        var html='<div style="display:flex;flex-wrap:wrap;gap:6px;width:100%">';
+        rows.forEach(function(r,i){
+            var op=Math.max(0.12,1-i*0.08);
+            html+='<span style="background:rgba(255,149,0,'+op+');color:'+(i<5?'white':'#1d1d1f')+';padding:5px 11px;border-radius:8px;font-size:0.83em;font-weight:500">'+r.n+' : '+r.a.toFixed(1)+'</span>';
+        });
+        el.innerHTML=html+'</div>';
+    }
+}
+
+// ===== CONTRAT =====
+function calcContrat() {
+    var d=document.getElementById('contratDate').value; if(!d) return;
+    var s=new Date(d), sd=s.getDate(), sm=s.getMonth(), sy=s.getFullYear(), cy=new Date().getFullYear();
+    var res=document.getElementById('contratResults'); res.style.display='block'; var html='';
+    for(var y=sy;y<=cy;y++) {
+        var tot=0,has=false;
+        for(var m=0;m<12;m++){
+            var mi=(sm+m)%12, yv=(sm+m)<12?y:y+1, yi=years.indexOf(yv.toString());
+            if(yi>=0){var v=parseFloat(values[mi]&&values[mi][yi]);if(!isNaN(v)&&v>0){tot+=v;has=true;}}
+        }
+        var lbl=String(sd).padStart(2,'0')+'/'+String(sm+1).padStart(2,'0')+'/'+y+' → '+String(sd).padStart(2,'0')+'/'+String(sm+1).padStart(2,'0')+'/'+(y+1);
+        html+='<div class="contrat-year-item'+(y===cy-1?' current':'')+'"><span>'+lbl+'</span><span class="contrat-year-value">'+(has?tot.toFixed(1)+' kWh':'&#8212;')+'</span></div>';
+    }
+    res.innerHTML=html;
+}
+
+// ===== CHART =====
+var chartObj = new Chart(document.getElementById('chart').getContext('2d'), {
+    type:'line', data:{labels:MONTHS,datasets:[]},
+    options:{responsive:true,maintainAspectRatio:true,
+        plugins:{legend:{position:'top',labels:{font:{size:11},padding:10,usePointStyle:true}},
+            tooltip:{callbacks:{label:function(c){return c.dataset.label+': '+c.parsed.y+' kWh';}}}},
+        scales:{y:{beginAtZero:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#6e6e73'},title:{display:true,text:'kWh',color:'#6e6e73'}},
+            x:{grid:{display:false},ticks:{color:'#6e6e73'}}}}
+});
+
+function updateChart() {
+    chartObj.data.datasets=years.map(function(yr,i){
+        return {label:yr, data:values.map(function(r){ var v=parseFloat(r&&r[i]); return isNaN(v)?null:v; }),
+            borderColor:COLORS[i%COLORS.length], backgroundColor:COLORS[i%COLORS.length]+'20',
+            borderWidth:2.5,tension:0.4,pointRadius:3,pointHoverRadius:6,spanGaps:false};
+    });
+    chartObj.update();
+}
+
+// ===== ADD / DELETE YEAR =====
+function addYear() {
+    var ny=(parseInt(years[years.length-1])+1).toString();
+    years.push(ny);
+    values.forEach(function(r){ r.push(''); });
+    render(); saveData();
+}
+function delYear() {
+    if(years.length<=1){alert('Impossible.');return;}
+    if(!confirm('Supprimer '+years[years.length-1]+' ?')) return;
+    years.pop();
+    values.forEach(function(r){ r.pop(); });
+    render(); saveData();
+}
+
+
+// ===== AUTH =====
+var auth = null;
+
+function initAuth() {
+    auth = firebase.auth();
+    auth.onAuthStateChanged(function(user) {
+        if(user) {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('logoutBtn').style.display = 'inline-block';
+            startFirebase();
+        } else {
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('logoutBtn').style.display = 'none';
+        }
+    });
+}
+
+function doLogin() {
+    var email = document.getElementById('loginEmail').value.trim();
+    var pass = document.getElementById('loginPassword').value;
+    var errEl = document.getElementById('loginError');
+    errEl.textContent = '';
+    if(!email || !pass) { errEl.textContent = 'Veuillez remplir tous les champs.'; return; }
+    firebase.auth().signInWithEmailAndPassword(email, pass)
+        .catch(function(e) {
+            errEl.textContent = 'Email ou mot de passe incorrect.';
+        });
+}
+
+function doLogout() {
+    if(confirm('Se déconnecter ?')) firebase.auth().signOut();
+}
+
+
+// ===== ECONOMIES =====
+function updateEcoSelect() {
+    var sel = document.getElementById('ecoYear');
+    var cur = sel.value;
+    sel.innerHTML = '';
+    var opt0 = document.createElement('option');
+    opt0.value = 'all'; opt0.textContent = 'Toutes';
+    sel.appendChild(opt0);
+    years.forEach(function(yr) {
+        var opt = document.createElement('option');
+        opt.value = yr; opt.textContent = yr;
+        sel.appendChild(opt);
+    });
+    // Default to last year with data
+    sel.value = cur && (cur==='all' || years.indexOf(cur)>=0) ? cur : years[years.length-2] || years[0];
+}
+
+function updateEco() {
+    var prix = parseFloat(document.getElementById('prixKwh').value) || 0.25;
+    var selYear = document.getElementById('ecoYear').value;
+
+    var totalKwh = 0;
+    if(selYear === 'all') {
+        years.forEach(function(_,j){ totalKwh += yearTotal(j); });
+    } else {
+        var j = years.indexOf(selYear);
+        if(j>=0) totalKwh = yearTotal(j);
+    }
+
+    var totalAllYears = 0;
+    years.forEach(function(_,j){ totalAllYears += yearTotal(j); });
+
+    var ecoAnnuel = totalKwh * prix;
+    var ecoTotalCumul = totalAllYears * prix;
+    var moisCount = selYear==='all' ? years.length*12 : 12;
+    var ecoMoyen = totalKwh > 0 ? (ecoAnnuel / Math.max(1, selYear==='all'?years.length:1)) / 12 : 0;
+    var co2 = totalKwh * 0.453;
+    var arbres = co2 / 22;
+    var km = co2 / 0.12;
+
+    function fmtEuro(n) { return n>=1000 ? (n/1000).toFixed(2)+' k€' : n.toFixed(2)+'€'; }
+
+    document.getElementById('ecoAnnuel').textContent = fmtEuro(ecoAnnuel);
+    document.getElementById('ecoTotal').textContent = fmtEuro(ecoTotalCumul);
+    document.getElementById('ecoMoyen').textContent = fmtEuro(ecoMoyen)+'/mois';
+    document.getElementById('ecoCo2').textContent = co2>=1000 ? (co2/1000).toFixed(2)+' t' : co2.toFixed(1)+' kg';
+    document.getElementById('ecoArbre').textContent = Math.round(arbres)+' arbres';
+    document.getElementById('ecoKm').textContent = Math.round(km).toLocaleString('fr')+' km';
+}
+
+// ===== START =====
+firebase.initializeApp(firebaseConfig);
+initAuth();
+document.getElementById('prixKwh').addEventListener('input', updateEco);
+document.getElementById('ecoYear').addEventListener('change', updateEco);
+</script>
+</body>
+</html>
