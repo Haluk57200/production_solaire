@@ -96,7 +96,11 @@ body{height:100%;background:var(--bg0);font-family:-apple-system,"SF Pro Text",s
     position:relative}
   [data-theme=light] #app{box-shadow:0 0 0 1px rgba(0,0,0,.12),0 40px 80px rgba(0,0,0,.22),0 12px 24px rgba(0,0,0,.12)}
   .safe-top{height:14px!important}
-  .tabbar{border-radius:0 0 50px 50px;left:0;transform:none;position:absolute}
+  /* Desktop: tabbar absolue dans le conteneur de hauteur fixe */
+  .tabbar{position:absolute;bottom:0;left:0;right:0;width:auto;
+    flex-shrink:unset;border-radius:0 0 50px 50px}
+  /* Desktop: pages se chevauchent avec tabbar absolue → padding nécessaire */
+  .page{padding-bottom:calc(var(--tabh) + var(--safe-b) + 24px)}
 }
 
 /* ════════════════════════════════════════
@@ -145,7 +149,8 @@ body{height:100%;background:var(--bg0);font-family:-apple-system,"SF Pro Text",s
    PAGES
 ════════════════════════════════════════ */
 .pages{flex:1;overflow:hidden;position:relative}
-.page{position:absolute;inset:0;overflow-y:auto;padding-bottom:calc(var(--tabh) + var(--safe-b) + 24px);
+/* Mobile: tabbar est un flex sibling → pages ne se chevauchent plus */
+.page{position:absolute;inset:0;overflow-y:auto;padding-bottom:20px;
   opacity:0;pointer-events:none;transform:translateY(8px);
   -webkit-overflow-scrolling:touch;scrollbar-width:none;background:var(--bg0);
   transition:background .3s,opacity .22s,transform .22s}
@@ -153,14 +158,21 @@ body{height:100%;background:var(--bg0);font-family:-apple-system,"SF Pro Text",s
 .page.on{opacity:1;pointer-events:all;transform:none}
 
 /* ════════════════════════════════════════
-   TAB BAR
+   TAB BAR — flex child natif (iOS fix)
 ════════════════════════════════════════ */
-.tabbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);
-  width:100%;max-width:390px;
+.tabbar{
+  flex-shrink:0;
+  width:100%;
   height:calc(49px + var(--safe-b));
-  background:var(--tab-bg);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);
-  border-top:.5px solid var(--sep);display:flex;align-items:flex-start;justify-content:space-around;
-  padding-top:8px;padding-bottom:var(--safe-b);z-index:200;transition:background .3s}
+  background:var(--tab-bg);
+  backdrop-filter:blur(24px) saturate(180%);
+  -webkit-backdrop-filter:blur(24px) saturate(180%);
+  border-top:.5px solid var(--sep);
+  display:flex;align-items:flex-start;justify-content:space-around;
+  padding-top:8px;padding-bottom:var(--safe-b);
+  z-index:200;transition:background .3s;
+  /* Pas de position:fixed — cassé dans overflow:hidden sur iOS Safari */
+}
 .tab{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 12px;min-width:60px;transition:transform .12s}
 .tab:active{transform:scale(.82)}
 .tab svg{width:24px;height:24px;fill:none;stroke:var(--txt4);stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;transition:stroke .18s}
@@ -350,7 +362,7 @@ input,textarea,select{-webkit-user-select:text;user-select:text;touch-action:aut
   border:.5px solid var(--sep);color:var(--txt);max-width:calc(100vw - 32px);text-align:center;
   box-shadow:0 4px 20px rgba(0,0,0,.2)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-@media(min-width:520px){.toast{bottom:80px}}
+@media(min-width:520px){.toast{bottom:90px}}
 
 /* ════════════════════════════════════════
    ANIMATIONS
