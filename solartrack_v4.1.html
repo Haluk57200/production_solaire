@@ -207,7 +207,10 @@ body{height:100%;background:var(--bg0);font-family:-apple-system,"SF Pro Text",s
 .hlabel-g{color:var(--green)}
 .hnum{font-size:52px;font-weight:800;letter-spacing:-2.5px;line-height:1;background:linear-gradient(135deg,var(--yellow),var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .hnum-g{background:linear-gradient(135deg,#4dff88,var(--green));-webkit-background-clip:text;background-clip:text}
-.hunit{display:inline;font-size:16px;font-weight:600;color:var(--orange);opacity:.9;margin-left:6px;-webkit-text-fill-color:var(--orange)}
+/* hunit doit explicitement annuler le -webkit-text-fill-color transparent du parent gradient */
+.hunit{display:inline;font-size:16px;font-weight:600;opacity:.9;margin-left:5px;
+  background:none;-webkit-background-clip:unset;background-clip:unset;
+  -webkit-text-fill-color:var(--orange);color:var(--orange)}
 
 /* ════════════════════════════════════════
    PROGRESS
@@ -255,7 +258,7 @@ body{height:100%;background:var(--bg0);font-family:-apple-system,"SF Pro Text",s
 /* ════════════════════════════════════════
    WEATHER
 ════════════════════════════════════════ */
-.wstrip{display:flex;gap:8px;overflow-x:auto;padding:0 16px 10px;scrollbar-width:none}
+.wstrip{display:flex;gap:8px;overflow-x:auto;padding:0 16px 10px;scrollbar-width:none;touch-action:pan-x;-webkit-overflow-scrolling:touch}
 .wstrip::-webkit-scrollbar{display:none}
 .wd{flex-shrink:0;background:var(--card);border-radius:var(--rs);padding:11px 14px;text-align:center;min-width:72px;border:.5px solid var(--card-b);transition:background .3s}
 .wd.now{background:linear-gradient(140deg,var(--hero1),var(--hero2));border-color:rgba(255,159,10,.45);min-width:82px;padding:13px 14px}
@@ -307,11 +310,6 @@ body{height:100%;background:var(--bg0);font-family:-apple-system,"SF Pro Text",s
 .ptabs{display:flex;background:var(--bg3);border-radius:9px;padding:2px;margin:0 16px 12px}
 .pt{flex:1;padding:7px 4px;text-align:center;font-size:12px;font-weight:700;border-radius:7px;cursor:pointer;color:var(--txt3);transition:all .18s}
 .pt.on{background:var(--bg2);color:var(--txt)}
-.ysel{display:flex;align-items:center;gap:8px;padding:0 16px 10px}
-.yb{width:32px;height:32px;border-radius:8px;background:var(--bg3);border:none;color:var(--txt);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s}
-.yb:active{background:var(--bg4)}
-.yb svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round}
-.yyr{flex:1;text-align:center;font-size:19px;font-weight:700;letter-spacing:-.4px;color:var(--txt)}
 
 /* ════════════════════════════════════════
    MODAL
@@ -336,7 +334,6 @@ body{height:100%;background:var(--bg0);font-family:-apple-system,"SF Pro Text",s
 select.fi{-webkit-appearance:auto;appearance:auto;cursor:pointer}
 .fi,.fi:focus{-webkit-user-select:text;user-select:text;touch-action:auto}
 .page,.ms{touch-action:pan-y;-webkit-overflow-scrolling:touch}
-.wstrip{touch-action:pan-x;-webkit-overflow-scrolling:touch}
 input,textarea,select{-webkit-user-select:text;user-select:text;touch-action:auto}
 
 /* ════════════════════════════════════════
