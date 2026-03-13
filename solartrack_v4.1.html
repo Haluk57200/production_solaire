@@ -979,8 +979,34 @@ async function doForgotPwd(){
 
 async function doAuthGoogle(){
   const provider = new firebase.auth.GoogleAuthProvider();
-  try{ await auth.signInWithPopup(provider); }
-  catch(e){ $t('auth_err', e.code==='auth/popup-closed-by-user'?'Connexion annulée':e.message); }
+  provider.addScope('email');
+  provider.addScope('profile');
+  // iOS Safari et mobile bloquent les popups → redirect obligatoire
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  if(isMobile){
+    try{
+      // Afficher un état de chargement
+      const btn = document.querySelector('button[onclick="doAuthGoogle()"]');
+      if(btn){ btn.style.opacity='.5'; btn.style.pointerEvents='none'; }
+      await auth.signInWithRedirect(provider);
+    } catch(e){
+      $t('auth_err', e.code==='auth/unauthorized-domain'
+        ? 'Domaine non autorisé — vérifiez Firebase Console'
+        : (e.message||'Erreur Google'));
+    }
+  } else {
+    try{
+      await auth.signInWithPopup(provider);
+    } catch(e){
+      const msgs = {
+        'auth/popup-closed-by-user':'Connexion annulée',
+        'auth/popup-blocked':'Popup bloquée — essayez de désactiver votre bloqueur',
+        'auth/unauthorized-domain':'Domaine non autorisé — vérifiez Firebase Console',
+        'auth/cancelled-popup-request':'Connexion annulée',
+      };
+      $t('auth_err', msgs[e.code]||e.message);
+    }
+  }
 }
 
 async function doSignOut(){
@@ -990,6 +1016,21 @@ async function doSignOut(){
 
 // Keyboard Enter on auth form
 document.addEventListener('keydown', e=>{ if(e.key==='Enter' && $('authScreen')?.style.display!=='none') doAuth(); });
+
+// ── GESTION RETOUR REDIRECT GOOGLE ──
+// Sur mobile, après le redirect Google, Firebase redirige ici → on récupère le résultat
+auth.getRedirectResult().then(result=>{
+  // Si result.user → onAuthStateChanged va s'en charger automatiquement
+  // Rien à faire ici, mais on capte les erreurs éventuelles
+}).catch(e=>{
+  if(e.code && e.code !== 'auth/no-auth-event'){
+    const msgs = {
+      'auth/unauthorized-domain':'Domaine non autorisé dans Firebase Console',
+      'auth/account-exists-with-different-credential':'Ce compte existe déjà avec un autre fournisseur',
+    };
+    setTimeout(()=>$t('auth_err', msgs[e.code]||e.message), 500);
+  }
+});
 
 // ── AUTH STATE OBSERVER ──
 const haptic=(ms=8)=>{ try{ navigator.vibrate&&navigator.vibrate(ms); }catch(e){} };
