@@ -797,6 +797,16 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,"SF Pro Dis
 <div class="toast" id="toast"></div>
 
 <script>
+
+// ── SAFE DOM HELPERS ──
+function $el(id){ return document.getElementById(id); }
+function $t(id,v){ const e=$el(id); if(e) e.textContent=v; }
+function $h(id,v){ const e=$el(id); if(e) e.innerHTML=v; }
+function $cls(id,v){ const e=$el(id); if(e) e.className=v; }
+function $st(id,prop,v){ const e=$el(id); if(e) e.style[prop]=v; }
+function $val(id,v){ const e=$el(id); if(e) e.value=v; }
+function $disp(id,v){ const e=$el(id); if(e) e.style.display=v; }
+
 // ═══════════════════════════════════════════════
 // CONSTANTS & STORE
 // ═══════════════════════════════════════════════
@@ -835,7 +845,7 @@ function saveS() {
 // ═══════════════════════════════════════════════
 function applyTheme(t) {
   document.documentElement.setAttribute('data-theme', t);
-  document.getElementById('themeBtn').textContent = t==='dark' ? '🌙' : '☀️';
+  $t('themeBtn',t==='dark' ? '🌙' : '☀️');
   const d = document.getElementById('themeDisp'); if(d) d.textContent = t==='dark'?'Sombre':'Clair';
 }
 function toggleTheme() {
@@ -912,36 +922,36 @@ let dataYear = new Date().getFullYear();
 function renderDash() {
   const year = new Date().getFullYear();
   const total = totY(year);
-  document.getElementById('hTotal').textContent = fmt(total);
-  document.getElementById('hYear').textContent = 'Année '+year;
-  document.getElementById('heroLoc').textContent = D.settings.lieu ? `☀️ ${D.settings.lieu}` : '⚡ Production Solaire';
+  $t('hTotal',fmt(total));
+  $t('hYear','Année '+year);
+  $t('heroLoc',D.settings.lieu ? `☀️ ${D.settings.lieu}` : '⚡ Production Solaire');
 
   // Objectif
   const obj = D.objectifs[year];
   if(obj) {
     const pct = Math.min(100,(total/obj*100));
-    document.getElementById('hObj').textContent = fmt(obj)+' kWh';
-    document.getElementById('hObjPct').textContent = pct.toFixed(0)+'% atteint';
-    document.getElementById('hObjPct').className = 'badge '+(pct>=100?'b-gr':pct>=70?'b-or':'b-rd');
-    setTimeout(()=>document.getElementById('hProgBar').style.width=pct+'%',50);
+    $t('hObj',fmt(obj)+' kWh');
+    $t('hObjPct',pct.toFixed(0)+'% atteint');
+    $cls('hObjPct','badge '+(pct>=100?'b-gr':pct>=70?'b-or':'b-rd'));
+    setTimeout(()=>$st('hProgBar','width',pct+'%',50));
   }
 
   // Widgets
   const pK = D.settings.prixKwh||0.25, pA = (D.settings.pctAutoconso||30)/100;
-  document.getElementById('wEco').textContent = fmtE(total*pA*pK);
-  document.getElementById('wCo2').textContent = fmt(total*0.0573,0)+' kg';
+  $t('wEco',fmtE(total*pA*pK));
+  $t('wCo2',fmt(total*0.0573,0)+' kg');
   const recs = Object.values(D.releves).map(r=>r.kwh).filter(Boolean);
-  document.getElementById('wRec').textContent = recs.length ? fmt(Math.max(...recs),0)+' kWh' : '—';
+  $t('wRec',recs.length ? fmt(Math.max(...recs),0)+' kWh' : '—');
 
   // Ce mois
   const ym = curYM(); const [,m] = ym.split('-');
-  document.getElementById('curMonthLabel').textContent = MF[parseInt(m)-1];
+  $t('curMonthLabel',MF[parseInt(m)-1]);
   const tm = D.releves[ym];
-  document.getElementById('smKwh').textContent = tm ? fmt(tm.kwh,0)+' kWh' : 'Non saisi';
+  $t('smKwh',tm ? fmt(tm.kwh,0)+' kWh' : 'Non saisi');
   const yVals = Object.entries(D.releves).filter(([k])=>k.startsWith(year+'-')).map(([,v])=>v.kwh);
   const avg = yVals.length ? yVals.reduce((a,b)=>a+b,0)/yVals.length : 0;
-  document.getElementById('smAvg').textContent = avg ? fmt(avg,0)+' kWh' : '—';
-  if(tm) { setTimeout(()=>document.getElementById('smBar').style.width=Math.min(100,(tm.kwh/(avg||tm.kwh))*100)+'%',50); }
+  $t('smAvg',avg ? fmt(avg,0)+' kWh' : '—');
+  if(tm) { setTimeout(()=>$st('smBar','width',Math.min(100,(tm.kwh/(avg||tm.kwh))*100)+'%',50)); }
   const prev = D.releves[prevMonth(ym)];
   const vpEl = document.getElementById('smVsPrev');
   if(tm&&prev) { const d=tm.kwh-prev.kwh; vpEl.textContent=(d>=0?'▲ +':'▼ ')+fmt(Math.abs(d),0)+' kWh'; vpEl.style.color=d>=0?'var(--green)':'var(--red)'; }
@@ -953,7 +963,7 @@ function renderDash() {
   const checks = [];
   if(!D.releves[lastM]) checks.push(MF[parseInt(lastM.split('-')[1])-1]+' '+(lastM.split('-')[0]));
   if(!tm) checks.push(MF[parseInt(m)-1]+' (mois en cours)');
-  if(checks.length) { abEl.style.display='flex'; document.getElementById('alertMsg').textContent='⚠️ Relevé manquant : '+checks.join(', '); }
+  if(checks.length) { abEl.style.display='flex'; $t('alertMsg','⚠️ Relevé manquant : '+checks.join(', ')); }
   else abEl.style.display='none';
 
   // Low production alert
@@ -968,9 +978,9 @@ function renderDash() {
   buildChartMain(year);
 
   // Widget preview
-  document.getElementById('wBigNum').textContent = tm ? fmt(tm.kwh,0) : '0';
-  document.getElementById('wSmNum').textContent = tm ? fmt(tm.kwh,0) : '0';
-  document.getElementById('wBigSub').textContent = `Année: ${fmt(total,0)} kWh`;
+  $t('wBigNum',tm ? fmt(tm.kwh,0) : '0');
+  $t('wSmNum',tm ? fmt(tm.kwh,0) : '0');
+  $t('wBigSub',`Année: ${fmt(total,0)} kWh`);
 }
 
 function buildProj() {
@@ -978,16 +988,16 @@ function buildProj() {
   const vm = {};
   for(let m=1;m<=12;m++) { const k=`${year}-${String(m).padStart(2,'0')}`; vm[m]=D.releves[k]?.kwh||null; }
   const known = Object.values(vm).filter(v=>v!==null);
-  if(!known.length) { document.getElementById('projVal').textContent='—'; return; }
+  if(!known.length) { $t('projVal','—'); return; }
   const avg = known.reduce((a,b)=>a+b,0)/known.length;
   let est = known.reduce((a,b)=>a+b,0);
   for(let m=1;m<=12;m++) if(vm[m]===null) est+=avg;
-  document.getElementById('projVal').textContent = fmt(est,0)+' kWh';
+  $t('projVal',fmt(est,0)+' kWh');
   const gain = est*(D.settings.pctAutoconso||30)/100*(D.settings.prixKwh||0.25);
-  document.getElementById('projGain').textContent = 'Gain estimé '+fmtE(gain);
+  $t('projGain','Gain estimé '+fmtE(gain));
   const obj = D.objectifs[year];
-  if(obj) { const vs=((est-obj)/obj*100).toFixed(0); document.getElementById('projBadge').textContent=(vs>=0?'+':'')+vs+'% obj.'; document.getElementById('projBadge').className='badge '+(vs>=0?'b-gr':'b-rd'); }
-  else { document.getElementById('projBadge').textContent='Estimation'; document.getElementById('projBadge').className='badge b-or'; }
+  if(obj) { const vs=((est-obj)/obj*100).toFixed(0); $t('projBadge',(vs>=0?'+':'')+vs+'% obj.'); $cls('projBadge','badge '+(vs>=0?'b-gr':'b-rd')); }
+  else { $t('projBadge','Estimation'); $cls('projBadge','badge b-or'); }
 }
 
 function buildChartMain(year) {
@@ -1019,27 +1029,27 @@ function buildChartMain(year) {
 function setDTab(n) {
   dTab=n;
   document.querySelectorAll('#dataTabs .pt').forEach((t,i)=>t.classList.toggle('active',i===n));
-  document.getElementById('dpRel').style.display=n===0?'block':'none';
-  document.getElementById('dpChart').style.display=n===1?'block':'none';
-  document.getElementById('dpComp').style.display=n===2?'block':'none';
+  $disp('dpRel',n===0?'block':'none');
+  $disp('dpChart',n===1?'block':'none');
+  $disp('dpComp',n===2?'block':'none');
   if(n===1) buildCharts();
   if(n===2) buildComp();
 }
 function chgDY(d) { dataYear+=d; renderData(); }
 
 function renderData() {
-  document.getElementById('dYearDisp').textContent=dataYear;
-  document.getElementById('dYearDisp2').textContent=dataYear;
-  document.getElementById('dYearLbl').textContent=dataYear;
+  $t('dYearDisp',dataYear);
+  $t('dYearDisp2',dataYear);
+  $t('dYearLbl',dataYear);
   const total=totY(dataYear);
-  document.getElementById('dTotal').textContent=fmt(total);
+  $t('dTotal',fmt(total));
   const entries=Object.entries(D.releves).filter(([k])=>k.startsWith(dataYear+'-'));
-  document.getElementById('dBadge').textContent=entries.length+' mois';
+  $t('dBadge',entries.length+' mois');
   const avg=entries.length?total/entries.length:0;
-  document.getElementById('dAvg').textContent='Moy: '+(avg?fmt(avg,0)+' kWh/mois':'—');
+  $t('dAvg','Moy: '+(avg?fmt(avg,0)+' kWh/mois':'—'));
 
   // Month grid
-  const grid=document.getElementById('mgrid'); grid.innerHTML='';
+  const grid=document.getElementById('mgrid'); if(grid)grid.innerHTML='';
   const ym=curYM();
   for(let m=1;m<=12;m++) {
     const k=`${dataYear}-${String(m).padStart(2,'0')}`;
@@ -1049,12 +1059,12 @@ function renderData() {
     const cell=document.createElement('div');
     cell.className='mc'+(r?' has':'')+(k===ym?' cur':'');
     cell.innerHTML=`<div class="mc-name">${MF[m-1].substring(0,3)}</div><div class="mc-val ${r?'':'empty'}">${r?fmt(r.kwh,0):'—'}</div>${!r?'<div class="mc-add">＋</div>':''}${r?`<div class="mc-bar" style="width:${barW}%"></div>`:''}`;
-    cell.onclick=()=>{ if(r) openEdit(k); else { document.getElementById('aMonth').value=k; document.getElementById('aKwh').value=''; document.getElementById('aNote').value=''; openM('addM'); } };
+    cell.onclick=()=>{ if(r) openEdit(k); else { $val('aMonth',k); $val('aKwh',''); $val('aNote',''); openM('addM'); } };
     grid.appendChild(cell);
   }
 
   // Table
-  const tbl=document.getElementById('dTable'); tbl.innerHTML='';
+  const tbl=document.getElementById('dTable'); if(tbl)tbl.innerHTML='';
   if(!entries.length) { tbl.innerHTML='<div style="padding:18px;text-align:center;color:var(--txt4);font-size:14px">Aucune donnée pour '+dataYear+'</div>'; return; }
   entries.sort(([a],[b])=>a.localeCompare(b)).forEach(([k,v])=>{
     const [y,m]=k.split('-');
@@ -1095,7 +1105,7 @@ function buildCharts() {
 
 function buildComp() {
   const years=allYears(); const y1=years[years.length-1]||dataYear; const y2=years[years.length-2]||(y1-1);
-  document.getElementById('compY1lbl').textContent=y1; document.getElementById('compY2lbl').textContent=y2;
+  $t('compY1lbl',y1); $t('compY2lbl',y2);
   const v1=[],v2=[];
   for(let m=1;m<=12;m++){
     const k1=`${y1}-${String(m).padStart(2,'0')}`, k2=`${y2}-${String(m).padStart(2,'0')}`;
@@ -1112,11 +1122,11 @@ function buildComp() {
   if(!allKwh.length) return;
   const best=all.reduce((a,b)=>(b[1].kwh||0)>(a[1].kwh||0)?b:a);
   const [by,bm]=best[0].split('-');
-  document.getElementById('sBestM').textContent=`${MF[parseInt(bm)-1]} ${by} — ${fmt(best[1].kwh)} kWh`;
-  document.getElementById('sAvgM').textContent=fmt(allKwh.reduce((a,b)=>a+b,0)/allKwh.length,0)+' kWh';
+  $t('sBestM',`${MF[parseInt(bm)-1]} ${by} — ${fmt(best[1].kwh)} kWh`);
+  $t('sAvgM',fmt(allKwh.reduce((a,b)=>a+b,0)/allKwh.length,0)+' kWh');
   const bestY=allYears().reduce((a,b)=>totY(b)>totY(a)?b:a,allYears()[0]||y1);
-  document.getElementById('sBestY').textContent=`${bestY} — ${fmt(totY(bestY))} kWh`;
-  document.getElementById('sAll').textContent=fmt(allKwh.reduce((a,b)=>a+b,0))+' kWh';
+  $t('sBestY',`${bestY} — ${fmt(totY(bestY))} kWh`);
+  $t('sAll',fmt(allKwh.reduce((a,b)=>a+b,0))+' kWh');
 }
 
 // ═══════════════════════════════════════════════
@@ -1127,14 +1137,14 @@ let wxCache=null, wxTime=0;
 function setMTab(n) {
   mTab=n;
   document.querySelectorAll('#mTabs .pt').forEach((t,i)=>t.classList.toggle('active',i===n));
-  document.getElementById('mpMeteo').style.display=n===0?'block':'none';
-  document.getElementById('mpProj').style.display=n===1?'block':'none';
+  $disp('mpMeteo',n===0?'block':'none');
+  $disp('mpProj',n===1?'block':'none');
   if(n===1) buildProjTable();
 }
 
 async function renderMeteo() {
-  document.getElementById('sPuiss').value=D.settings.puissanceCrete||3;
-  document.getElementById('sPR').value=D.settings.perfRatio||80;
+  $val('sPuiss',D.settings.puissanceCrete||3);
+  $val('sPR',D.settings.perfRatio||80);
   await loadWeather();
   setMTab(mTab);
 }
@@ -1175,11 +1185,11 @@ function renderWx(data) {
   });
   // Today card
   const [ic0,desc0]=wxInfo(daily.weathercode[0]);
-  document.getElementById('tdIcon').textContent=ic0;
-  document.getElementById('tdDesc').textContent=desc0;
-  document.getElementById('tdTemp').textContent=`${Math.round(daily.temperature_2m_min[0])}° / ${Math.round(daily.temperature_2m_max[0])}°C`;
-  document.getElementById('tdProd').textContent=estProd(daily.shortwave_radiation_sum[0],daily.weathercode[0]);
-  document.getElementById('tdLoc').textContent=`📍 ${D.settings.lieu||`${D.settings.lat}°N`}`;
+  $t('tdIcon',ic0);
+  $t('tdDesc',desc0);
+  $t('tdTemp',`${Math.round(daily.temperature_2m_min[0])}° / ${Math.round(daily.temperature_2m_max[0])}°C`);
+  $t('tdProd',estProd(daily.shortwave_radiation_sum[0],daily.weathercode[0]));
+  $t('tdLoc',`📍 ${D.settings.lieu||`${D.settings.lat}°N`}`);
   // Radiation chart
   const cv=document.getElementById('chartRad'); if(cv){
     const isDark=D.theme!=='light';
@@ -1217,9 +1227,9 @@ function buildProjTable() {
     tr.innerHTML=`<td>${MN[m-1]}</td><td style="color:var(--txt3)">${histAvg?fmt(histAvg,0)+' kWh':'—'}</td><td>${est?fmt(est,0)+' kWh':'—'}</td>`;
     tbody.appendChild(tr);
   }
-  document.getElementById('projSum').textContent=fmt(total)+' kWh';
-  document.getElementById('projBest').textContent=bestM||'—';
-  document.getElementById('projWorst').textContent=worstM||'—';
+  $t('projSum',fmt(total)+' kWh');
+  $t('projBest',bestM||'—');
+  $t('projWorst',worstM||'—');
 }
 
 // ═══════════════════════════════════════════════
@@ -1228,24 +1238,25 @@ function buildProjTable() {
 function setFTab(n) {
   fTab=n;
   document.querySelectorAll('#fTabs .pt').forEach((t,i)=>t.classList.toggle('active',i===n));
-  document.getElementById('fpEdf').style.display=n===0?'block':'none';
-  document.getElementById('fpEco').style.display=n===1?'block':'none';
-  document.getElementById('fpFact').style.display=n===2?'block':'none';
+  $disp('fpEdf',n===0?'block':'none');
+  $disp('fpEco',n===1?'block':'none');
+  $disp('fpFact',n===2?'block':'none');
+  if(n===0) buildEdfPanel();
   if(n===1) buildEco();
 }
 function renderFin() { setFTab(fTab); }
 
 function buildEdfPanel() {
-  document.getElementById('annivDisp').textContent=D.anniversaire?'Début contrat : '+fmtD(D.anniversaire):'Non configurée → Réglages';
+  $t('annivDisp',D.anniversaire?'Début contrat : '+fmtD(D.anniversaire):'Non configurée → Réglages');
   const year=new Date().getFullYear();
   const total=totY(year); const pct=(D.pctSurplus||100)/100;
   const kwhInj=total*pct; const tarif=getTarif(new Date());
   const rev=tarif?kwhInj*tarif:null;
-  document.getElementById('edfYlbl').textContent=year;
-  document.getElementById('edfRev').textContent=rev?fmtE(rev):'—';
-  document.getElementById('edfKwh').textContent=kwhInj?fmt(kwhInj,0)+' kWh':'—';
+  $t('edfYlbl',year);
+  $t('edfRev',rev?fmtE(rev):'—');
+  $t('edfKwh',kwhInj?fmt(kwhInj,0)+' kWh':'—');
   // Tarifs
-  const tl=document.getElementById('tarifsList'); tl.innerHTML='';
+  const tl=document.getElementById('tarifsList'); if(tl)tl.innerHTML='';
   if(!D.tarifs.length) { tl.innerHTML='<div style="font-size:13px;color:var(--txt4);text-align:center;padding:10px">Aucun tarif défini</div>'; }
   else { D.tarifs.sort((a,b)=>a.date.localeCompare(b.date)).forEach((t,i)=>{
     const row=document.createElement('div'); row.className='fr';
@@ -1253,7 +1264,7 @@ function buildEdfPanel() {
     tl.appendChild(row);
   }); }
   // Anniversaire table
-  const tbl=document.getElementById('annivTable'); tbl.innerHTML='';
+  const tbl=document.getElementById('annivTable'); if(tbl)tbl.innerHTML='';
   if(!D.anniversaire) { tbl.innerHTML='<div style="padding:14px;font-size:13px;color:var(--txt4)">Configurez la date anniversaire dans Réglages</div>'; return; }
   const start=new Date(D.anniversaire); const now=new Date();
   for(let i=0;i<6;i++){
@@ -1270,8 +1281,8 @@ function buildEdfPanel() {
 }
 
 function buildEco() {
-  document.getElementById('ePrix').value=D.settings.prixKwh||0.25;
-  document.getElementById('ePct').value=D.settings.pctAutoconso||30;
+  $val('ePrix',D.settings.prixKwh||0.25);
+  $val('ePct',D.settings.pctAutoconso||30);
   calcEco();
 }
 
@@ -1279,9 +1290,9 @@ function calcEco() {
   const pK=parseFloat(document.getElementById('ePrix')?.value||0.25);
   const pA=parseFloat(document.getElementById('ePct')?.value||30)/100;
   const year=new Date().getFullYear(); const total=totY(year);
-  document.getElementById('ecoYearLbl').textContent=year;
-  document.getElementById('ecoVal').textContent=fmtE(total*pA*pK);
-  document.getElementById('ecoCo2').textContent=fmt(total*0.0573,0)+' kg';
+  $t('ecoYearLbl',year);
+  $t('ecoVal',fmtE(total*pA*pK));
+  $t('ecoCo2',fmt(total*0.0573,0)+' kg');
   const detail=document.getElementById('ecoDetail'); if(detail){ detail.innerHTML='';
     for(let m=1;m<=12;m++){ const k=`${year}-${String(m).padStart(2,'0')}`; const r=D.releves[k]; if(!r) continue;
       const row=document.createElement('div'); row.className='fr';
@@ -1305,13 +1316,13 @@ function calcFact() {
   let kwh=0;
   Object.entries(D.releves).forEach(([k,v])=>{ const d=new Date(k+'-15'); if(d>=from&&d<=to) kwh+=(v.kwh||0); });
   const pct=(D.pctSurplus||100)/100; const kwhInj=kwh*pct;
-  document.getElementById('fKwh').value=kwhInj.toFixed(1);
+  $val('fKwh',kwhInj.toFixed(1));
   const tInput=parseFloat(document.getElementById('fTarif').value);
   const tarif=tInput||getTarif(from);
   if(!tarif) { showToast('Tarif manquant','⚠️'); return; }
   const montant=kwhInj*tarif;
-  document.getElementById('fMontant').textContent=fmtE(montant);
-  document.getElementById('fDetail').textContent=`${fmt(kwhInj,1)} kWh × ${tarif.toFixed(4)} €/kWh`;
+  $t('fMontant',fmtE(montant));
+  $t('fDetail',`${fmt(kwhInj,1)} kWh × ${tarif.toFixed(4)} €/kWh`);
 }
 
 // ═══════════════════════════════════════════════
@@ -1409,11 +1420,11 @@ function genPDF() {
 // ═══════════════════════════════════════════════
 function renderSettings() {
   const s=D.settings;
-  document.getElementById('sInstSub').textContent=s.nom||(s.lieu?s.lieu:'Configurer');
-  document.getElementById('sObjSub').textContent=D.objectifs[new Date().getFullYear()]?D.objectifs[new Date().getFullYear()]+' kWh':'Non défini';
-  document.getElementById('sAnnivSub').textContent=D.anniversaire?fmtD(D.anniversaire):'Non configurée';
-  document.getElementById('sLocSub').textContent=s.lieu?`${s.lieu} (${s.lat}°, ${s.lon}°)`:'Non configurée';
-  document.getElementById('themeDisp').textContent=D.theme==='dark'?'Sombre':'Clair';
+  $t('sInstSub',s.nom||(s.lieu?s.lieu:'Configurer'));
+  $t('sObjSub',D.objectifs[new Date().getFullYear()]?D.objectifs[new Date().getFullYear()]+' kWh':'Non défini');
+  $t('sAnnivSub',D.anniversaire?fmtD(D.anniversaire):'Non configurée');
+  $t('sLocSub',s.lieu?`${s.lieu} (${s.lat}°, ${s.lon}°)`:'Non configurée');
+  $t('themeDisp',D.theme==='dark'?'Sombre':'Clair');
   // Notifs toggles
   const tn=document.getElementById('togNotif'); if(tn) { tn.classList.toggle('on',D.notifs.rappel); }
   const ta=document.getElementById('togAlert'); if(ta) { ta.classList.toggle('on',D.notifs.alert); }
@@ -1421,9 +1432,9 @@ function renderSettings() {
   renderFbStatus();
   // Widget preview
   const ym=curYM(); const tm=D.releves[ym];
-  document.getElementById('wBigNum').textContent=tm?fmt(tm.kwh,0):'0';
-  document.getElementById('wSmNum').textContent=tm?fmt(tm.kwh,0):'0';
-  document.getElementById('wBigSub').textContent=`Année: ${fmt(totY(new Date().getFullYear()),0)} kWh`;
+  $t('wBigNum',tm?fmt(tm.kwh,0):'0');
+  $t('wSmNum',tm?fmt(tm.kwh,0):'0');
+  $t('wBigSub',`Année: ${fmt(totY(new Date().getFullYear()),0)} kWh`);
 }
 
 function saveInst() {
@@ -1450,7 +1461,7 @@ function saveLoc() {
 }
 function autoGPS() {
   if(!navigator.geolocation) { showToast('GPS non disponible','⚠️'); return; }
-  navigator.geolocation.getCurrentPosition(p=>{ document.getElementById('lLat').value=p.coords.latitude.toFixed(4); document.getElementById('lLon').value=p.coords.longitude.toFixed(4); showToast('Position GPS obtenue 📍'); },()=>showToast('Impossible','⚠️'));
+  navigator.geolocation.getCurrentPosition(p=>{ $val('lLat',p.coords.latitude.toFixed(4)); $val('lLon',p.coords.longitude.toFixed(4)); showToast('Position GPS obtenue 📍'); },()=>showToast('Impossible','⚠️'));
 }
 
 // ═══════════════════════════════════════════════
@@ -1566,11 +1577,11 @@ function saveRel() {
 }
 function openEdit(key) {
   const r=D.releves[key]; const [y,m]=key.split('-');
-  document.getElementById('editMT').textContent=`${MF[parseInt(m)-1]} ${y}`;
-  document.getElementById('eKwh').value=r?r.kwh:'';
-  document.getElementById('eNote').value=r?(r.note||''):'';
+  $t('editMT',`${MF[parseInt(m)-1]} ${y}`);
+  $val('eKwh',r?r.kwh:'');
+  $val('eNote',r?(r.note||''):'');
 
-  document.getElementById('eKey').value=key; openM('editM');
+  $val('eKey',key); openM('editM');
 }
 function updRel() {
   const key=document.getElementById('eKey').value;
@@ -1640,12 +1651,12 @@ function doReset() {
 // MODALS
 // ═══════════════════════════════════════════════
 function openM(id) {
-  if(id==='addM') { document.getElementById('aMonth').value=curYM(); document.getElementById('aKwh').value=''; document.getElementById('aNote').value=''; }
-  if(id==='instM') { const s=D.settings; document.getElementById('sNom').value=s.nom||''; document.getElementById('sLieu').value=s.lieu||''; document.getElementById('sPuiss2').value=s.puissance||3; document.getElementById('sPan').value=s.panneaux||''; }
-  if(id==='objM') { document.getElementById('oYear').value=new Date().getFullYear(); document.getElementById('oKwh').value=D.objectifs[new Date().getFullYear()]||''; }
-  if(id==='annivM') { document.getElementById('aDate').value=D.anniversaire||''; }
-  if(id==='locM') { document.getElementById('lVille').value=D.settings.lieu||''; document.getElementById('lLat').value=D.settings.lat||''; document.getElementById('lLon').value=D.settings.lon||''; }
-  if(id==='fbM') { if(D.fbConfig) { document.getElementById('fbApiKey').value=D.fbConfig.apiKey||''; document.getElementById('fbProjId').value=D.fbConfig.projectId||''; document.getElementById('fbAuthD').value=D.fbConfig.authDomain||''; } }
+  if(id==='addM') { $val('aMonth',curYM()); $val('aKwh',''); $val('aNote',''); }
+  if(id==='instM') { const s=D.settings; $val('sNom',s.nom||''); $val('sLieu',s.lieu||''); $val('sPuiss2',s.puissance||3); $val('sPan',s.panneaux||''); }
+  if(id==='objM') { $val('oYear',new Date().getFullYear()); $val('oKwh',D.objectifs[new Date().getFullYear()]||''); }
+  if(id==='annivM') { $val('aDate',D.anniversaire||''); }
+  if(id==='locM') { $val('lVille',D.settings.lieu||''); $val('lLat',D.settings.lat||''); $val('lLon',D.settings.lon||''); }
+  if(id==='fbM') { if(D.fbConfig) { $val('fbApiKey',D.fbConfig.apiKey||''); $val('fbProjId',D.fbConfig.projectId||''); $val('fbAuthD',D.fbConfig.authDomain||''); } }
   document.getElementById(id).classList.add('open');
 }
 function closeM(id) { document.getElementById(id).classList.remove('open'); }
@@ -1655,20 +1666,19 @@ function closeMBg(e,id) { if(e.target.classList.contains('mo')) closeM(id); }
 // TOAST
 // ═══════════════════════════════════════════════
 function showToast(msg,emoji='✓') {
-  const t=document.getElementById('toast'); t.textContent=`${emoji} ${msg}`;
-  t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2600);
+  const t=document.getElementById('toast'); if(t){t.textContent=`${emoji} ${msg}`;
+  t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2600);}
 }
 
 // ═══════════════════════════════════════════════
-// FINANCE PAGE DISPATCHER
+// FINANCE PAGE DISPATCHER (merged into setFTab above)
 // ═══════════════════════════════════════════════
-const origSetFTab = setFTab;
-window.setFTab = function(n) {
+function _unused_setFTab_override(n) {
   fTab=n;
   document.querySelectorAll('#fTabs .pt').forEach((t,i)=>t.classList.toggle('active',i===n));
-  document.getElementById('fpEdf').style.display=n===0?'block':'none';
-  document.getElementById('fpEco').style.display=n===1?'block':'none';
-  document.getElementById('fpFact').style.display=n===2?'block':'none';
+  $disp('fpEdf',n===0?'block':'none');
+  $disp('fpEco',n===1?'block':'none');
+  $disp('fpFact',n===2?'block':'none');
   if(n===0) buildEdfPanel();
   if(n===1) buildEco();
 };
