@@ -1,0 +1,1436 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SolarTrack">
+<title>SolarTrack</title>
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%23000'/%3E%3Ccircle cx='90' cy='90' r='28' fill='none' stroke='%23FF9F0A' stroke-width='9'/%3E%3Cline x1='90' y1='22' x2='90' y2='40' stroke='%23FF9F0A' stroke-width='9' stroke-linecap='round'/%3E%3Cline x1='90' y1='140' x2='90' y2='158' stroke='%23FF9F0A' stroke-width='9' stroke-linecap='round'/%3E%3Cline x1='22' y1='90' x2='40' y2='90' stroke='%23FF9F0A' stroke-width='9' stroke-linecap='round'/%3E%3Cline x1='140' y1='90' x2='158' y2='90' stroke='%23FF9F0A' stroke-width='9' stroke-linecap='round'/%3E%3Cline x1='40' y1='40' x2='52' y2='52' stroke='%23FF9F0A' stroke-width='9' stroke-linecap='round'/%3E%3Cline x1='128' y1='128' x2='140' y2='140' stroke='%23FF9F0A' stroke-width='9' stroke-linecap='round'/%3E%3Cline x1='140' y1='40' x2='128' y2='52' stroke='%23FF9F0A' stroke-width='9' stroke-linecap='round'/%3E%3Cline x1='40' y1='140' x2='52' y2='128' stroke='%23FF9F0A' stroke-width='9' stroke-linecap='round'/%3E%3C/svg%3E">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+<style>
+/* ════════════════════════════════════════
+   DARK THEME (défaut)
+════════════════════════════════════════ */
+:root {
+  --bg0:#000; --bg2:#1C1C1E; --bg3:#2C2C2E; --bg4:#3A3A3C;
+  --sep:rgba(255,255,255,.10); --sep2:rgba(255,255,255,.06);
+  --txt:#FFFFFF; --txt2:rgba(235,235,245,.84); --txt3:rgba(235,235,245,.56); --txt4:rgba(235,235,245,.30);
+  --orange:#FF9F0A; --yellow:#FFD60A; --green:#30D158; --blue:#0A84FF;
+  --red:#FF453A; --teal:#5AC8FA; --purple:#BF5AF2;
+  --card:#1C1C1E; --card-b:rgba(255,255,255,.08);
+  --input-bg:#2C2C2E; --input-focus:#3A3A3C;
+  --nav-bg:rgba(0,0,0,.92); --tab-bg:rgba(18,18,20,.92);
+  --hero1:#0d0800; --hero2:#0a0a0a; --hero3:#001008;
+  --hero-edf1:#001200; --hero-edf2:#0a0a0a;
+  --r:16px; --rs:12px;
+  --safe-t:env(safe-area-inset-top,59px);
+  --safe-b:env(safe-area-inset-bottom,34px);
+  --tabh:49px;
+}
+/* ════════════════════════════════════════
+   LIGHT THEME
+════════════════════════════════════════ */
+@media(prefers-color-scheme:light){ :root{
+  --bg0:#F2F2F7; --bg2:#FFFFFF; --bg3:#F2F2F7; --bg4:#E5E5EA;
+  --sep:rgba(0,0,0,.09); --sep2:rgba(0,0,0,.05);
+  --txt:#000000; --txt2:rgba(0,0,0,.78); --txt3:rgba(0,0,0,.46); --txt4:rgba(0,0,0,.24);
+  --orange:#E8830A; --yellow:#D4A000; --green:#248A3D; --blue:#0071E3;
+  --red:#D70015; --teal:#0071A4; --purple:#8944AB;
+  --card:#FFFFFF; --card-b:rgba(0,0,0,.07);
+  --input-bg:#F2F2F7; --input-focus:#E5E5EA;
+  --nav-bg:rgba(242,242,247,.95); --tab-bg:rgba(255,255,255,.92);
+  --hero1:#FFF0CC; --hero2:#FFFDF5; --hero3:#EDFFF4;
+  --hero-edf1:#DDFFF0; --hero-edf2:#FAFFFE;
+}}
+[data-theme=dark]{
+  --bg0:#000; --bg2:#1C1C1E; --bg3:#2C2C2E; --bg4:#3A3A3C;
+  --sep:rgba(255,255,255,.10); --sep2:rgba(255,255,255,.06);
+  --txt:#FFFFFF; --txt2:rgba(235,235,245,.84); --txt3:rgba(235,235,245,.56); --txt4:rgba(235,235,245,.30);
+  --orange:#FF9F0A; --yellow:#FFD60A; --green:#30D158; --blue:#0A84FF;
+  --red:#FF453A; --teal:#5AC8FA; --purple:#BF5AF2;
+  --card:#1C1C1E; --card-b:rgba(255,255,255,.08);
+  --input-bg:#2C2C2E; --input-focus:#3A3A3C;
+  --nav-bg:rgba(0,0,0,.92); --tab-bg:rgba(18,18,20,.92);
+  --hero1:#0d0800; --hero2:#0a0a0a; --hero3:#001008;
+  --hero-edf1:#001200; --hero-edf2:#0a0a0a;
+}
+[data-theme=light]{
+  --bg0:#F2F2F7; --bg2:#FFFFFF; --bg3:#F2F2F7; --bg4:#E5E5EA;
+  --sep:rgba(0,0,0,.09); --sep2:rgba(0,0,0,.05);
+  --txt:#000000; --txt2:rgba(0,0,0,.78); --txt3:rgba(0,0,0,.46); --txt4:rgba(0,0,0,.24);
+  --orange:#E8830A; --yellow:#D4A000; --green:#248A3D; --blue:#0071E3;
+  --red:#D70015; --teal:#0071A4; --purple:#8944AB;
+  --card:#FFFFFF; --card-b:rgba(0,0,0,.07);
+  --input-bg:#F2F2F7; --input-focus:#E5E5EA;
+  --nav-bg:rgba(242,242,247,.95); --tab-bg:rgba(255,255,255,.92);
+  --hero1:#FFF0CC; --hero2:#FFFDF5; --hero3:#EDFFF4;
+  --hero-edf1:#DDFFF0; --hero-edf2:#FAFFFE;
+}
+
+/* ════════════════════════════════════════
+   BASE
+════════════════════════════════════════ */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+html{height:100%;-webkit-text-size-adjust:100%;-webkit-touch-callout:none}
+body{height:100%;background:var(--bg0);font-family:-apple-system,"SF Pro Text",system-ui,sans-serif;color:var(--txt);overscroll-behavior:none;transition:background .3s,color .3s;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+
+/* ════════════════════════════════════════
+   DESKTOP FRAME
+════════════════════════════════════════ */
+@media(min-width:520px){
+  body{display:flex;align-items:center;justify-content:center;min-height:100vh;
+    background:radial-gradient(ellipse at 20% 50%,rgba(255,159,10,.07),transparent 55%),
+               radial-gradient(ellipse at 80% 20%,rgba(48,209,88,.04),transparent 55%),var(--bg0)}
+  [data-theme=light] body{
+    background:radial-gradient(ellipse at 20% 50%,rgba(255,149,0,.08),transparent 55%),
+               radial-gradient(ellipse at 80% 20%,rgba(52,199,89,.06),transparent 55%),#E5E5EA}
+  #app{width:390px;height:min(844px,96vh);border-radius:50px;overflow:hidden;
+    box-shadow:0 0 0 1px rgba(255,255,255,.12),0 60px 120px rgba(0,0,0,.65),0 20px 40px rgba(0,0,0,.35);
+    position:relative}
+  [data-theme=light] #app{box-shadow:0 0 0 1px rgba(0,0,0,.12),0 40px 80px rgba(0,0,0,.22),0 12px 24px rgba(0,0,0,.12)}
+  .safe-top{height:14px!important}
+  .tabbar{border-radius:0 0 50px 50px;left:0;transform:none;position:absolute}
+}
+
+/* ════════════════════════════════════════
+   SHELL
+════════════════════════════════════════ */
+#app{height:100dvh;display:flex;flex-direction:column;overflow:hidden;background:var(--bg0);position:relative;transition:background .3s}
+.safe-top{height:var(--safe-t);background:var(--bg0);flex-shrink:0;transition:background .3s}
+
+/* ════════════════════════════════════════
+   AUTH SCREEN
+════════════════════════════════════════ */
+#authScreen{position:absolute;inset:0;background:var(--bg0);z-index:900;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 28px;transition:background .3s;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.auth-logo{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.auth-logo svg{width:36px;height:36px;color:var(--orange)}
+.auth-wordmark{font-size:30px;font-weight:800;letter-spacing:-.8px}
+.auth-wordmark em{color:var(--orange);font-style:normal}
+.auth-sub{font-size:14px;color:var(--txt3);margin-bottom:36px;text-align:center}
+.auth-card{width:100%;background:var(--card);border-radius:20px;padding:24px;border:.5px solid var(--card-b)}
+.auth-tabs{display:flex;background:var(--bg3);border-radius:9px;padding:2px;margin-bottom:20px}
+.auth-tab{flex:1;padding:8px;text-align:center;font-size:14px;font-weight:600;border-radius:7px;cursor:pointer;color:var(--txt3);transition:all .18s}
+.auth-tab.on{background:var(--bg2);color:var(--txt);box-shadow:0 1px 4px rgba(0,0,0,.2)}
+.auth-err{font-size:13px;color:var(--red);text-align:center;margin-bottom:10px;min-height:18px}
+.auth-sep{display:flex;align-items:center;gap:10px;margin:16px 0}
+.auth-sep::before,.auth-sep::after{content:'';flex:1;height:.5px;background:var(--sep)}
+.auth-sep span{font-size:12px;color:var(--txt4)}
+.auth-foot{font-size:12px;color:var(--txt4);text-align:center;margin-top:20px;line-height:1.5}
+
+/* ════════════════════════════════════════
+   NAV
+════════════════════════════════════════ */
+.nav{display:flex;align-items:center;justify-content:space-between;padding:4px 20px 10px;background:var(--nav-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);flex-shrink:0;transition:background .3s}
+.logo-w{display:flex;align-items:center;gap:8px}
+.logo-w svg{width:26px;height:26px;color:var(--orange)}
+.wm{font-size:22px;font-weight:800;letter-spacing:-.6px;color:var(--txt)}
+.wm em{color:var(--orange);font-style:normal}
+.nav-right{display:flex;gap:8px;align-items:center}
+.nav-btn{width:34px;height:34px;border-radius:50%;background:var(--bg3);border:none;color:var(--txt);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .12s,background .2s}
+.nav-btn:active{transform:scale(.82)}
+.nav-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0;transition:background .3s}
+.sync-dot.syncing{background:var(--yellow);animation:pulse 1s infinite}
+.sync-dot.offline{background:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ════════════════════════════════════════
+   PAGES
+════════════════════════════════════════ */
+.pages{flex:1;overflow:hidden;position:relative}
+.page{position:absolute;inset:0;overflow-y:auto;padding-bottom:calc(var(--tabh) + var(--safe-b) + 24px);
+  opacity:0;pointer-events:none;transform:translateY(8px);
+  -webkit-overflow-scrolling:touch;scrollbar-width:none;background:var(--bg0);
+  transition:background .3s,opacity .22s,transform .22s}
+.page::-webkit-scrollbar{display:none}
+.page.on{opacity:1;pointer-events:all;transform:none}
+
+/* ════════════════════════════════════════
+   TAB BAR
+════════════════════════════════════════ */
+.tabbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:390px;
+  height:calc(49px + var(--safe-b));
+  background:var(--tab-bg);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);
+  border-top:.5px solid var(--sep);display:flex;align-items:flex-start;justify-content:space-around;
+  padding-top:8px;padding-bottom:var(--safe-b);z-index:200;transition:background .3s}
+.tab{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 12px;min-width:60px;transition:transform .12s}
+.tab:active{transform:scale(.82)}
+.tab svg{width:24px;height:24px;fill:none;stroke:var(--txt4);stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;transition:stroke .18s}
+.tab .lbl{font-size:10px;font-weight:500;color:var(--txt4);transition:color .18s;letter-spacing:-.1px}
+.tab.on svg{stroke:var(--orange)}
+.tab.on .lbl{color:var(--orange);font-weight:700}
+
+/* ════════════════════════════════════════
+   CARDS
+════════════════════════════════════════ */
+.card{background:var(--card);border-radius:var(--r);border:.5px solid var(--card-b);padding:18px;margin:0 16px 10px;transition:background .3s,border-color .3s}
+.ctitle{font-size:11px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px}
+
+/* ════════════════════════════════════════
+   HERO
+════════════════════════════════════════ */
+.hero{background:linear-gradient(140deg,var(--hero1) 0%,var(--hero2) 50%,var(--hero3) 100%);
+  border-radius:24px;padding:22px;margin:0 16px 10px;border:.5px solid rgba(255,159,10,.2);position:relative;overflow:hidden;transition:background .3s}
+[data-theme=light] .hero{border-color:rgba(255,149,0,.25)}
+.hero::before{content:'';position:absolute;top:-80px;right:-60px;width:220px;height:220px;
+  background:radial-gradient(circle,rgba(255,159,10,.12) 0%,transparent 68%);pointer-events:none}
+.hero-edf{background:linear-gradient(140deg,var(--hero-edf1) 0%,var(--hero-edf2) 50%,var(--hero-edf1) 100%);border-color:rgba(48,209,88,.22)}
+[data-theme=light] .hero-edf{border-color:rgba(52,199,89,.28)}
+.hlabel{font-size:11px;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;opacity:.88}
+.hlabel-g{color:var(--green)}
+.hnum{font-size:52px;font-weight:800;letter-spacing:-2.5px;line-height:1;background:linear-gradient(135deg,var(--yellow),var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hnum-g{background:linear-gradient(135deg,#4dff88,var(--green));-webkit-background-clip:text;background-clip:text}
+.hunit{font-size:16px;font-weight:600;color:var(--orange);margin-top:2px;opacity:.9}
+
+/* ════════════════════════════════════════
+   PROGRESS
+════════════════════════════════════════ */
+.prog{height:5px;background:var(--bg4);border-radius:3px;overflow:hidden;margin-top:10px}
+.prog-f{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--orange),var(--yellow));transition:width 1s cubic-bezier(.34,1.4,.64,1)}
+
+/* ════════════════════════════════════════
+   STATS
+════════════════════════════════════════ */
+.stats3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 16px 10px}
+.sc{background:var(--card);border-radius:var(--rs);padding:13px 11px;border:.5px solid var(--card-b);transition:background .3s}
+.sc svg{width:20px;height:20px;fill:none;stroke-width:1.6;margin-bottom:6px}
+.sc-v{font-size:18px;font-weight:700;letter-spacing:-.4px;line-height:1;color:var(--txt)}
+.sc-l{font-size:10px;color:var(--txt3);margin-top:3px;font-weight:500;text-transform:uppercase;letter-spacing:.2px}
+
+/* ════════════════════════════════════════
+   SECTION HEADER
+════════════════════════════════════════ */
+.sh{padding:14px 16px 8px;display:flex;justify-content:space-between;align-items:center}
+.sh-t{font-size:20px;font-weight:700;letter-spacing:-.4px;color:var(--txt)}
+.sh-a{font-size:14px;color:var(--blue);font-weight:500;cursor:pointer}
+
+/* ════════════════════════════════════════
+   MONTH GRID
+════════════════════════════════════════ */
+.mgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 16px 10px}
+.mc{background:var(--card);border-radius:var(--rs);padding:12px;border:.5px solid var(--card-b);cursor:pointer;transition:transform .12s,background .2s;position:relative;overflow:hidden;min-height:72px}
+.mc:active{transform:scale(.90)}
+.mc.has{border-color:rgba(255,159,10,.28)}
+[data-theme=light] .mc.has{border-color:rgba(255,149,0,.4)}
+.mc.cur{border-color:rgba(10,132,255,.45)}
+.mc-name{font-size:10px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.4px}
+.mc-kwh{font-size:16px;font-weight:700;letter-spacing:-.3px;margin-top:4px;color:var(--txt)}
+.mc-kwh.empty{color:var(--txt4);font-size:13px;font-weight:400}
+.mc-rev{font-size:11px;color:var(--green);font-weight:600;margin-top:2px}
+.mc-bar{position:absolute;bottom:0;left:0;height:3px;background:linear-gradient(90deg,var(--orange),var(--yellow));border-radius:0 2px 0 0}
+
+/* ════════════════════════════════════════
+   WEATHER
+════════════════════════════════════════ */
+.wstrip{display:flex;gap:8px;overflow-x:auto;padding:0 16px 10px;scrollbar-width:none}
+.wstrip::-webkit-scrollbar{display:none}
+.wd{flex-shrink:0;background:var(--card);border-radius:var(--rs);padding:11px 14px;text-align:center;min-width:70px;border:.5px solid var(--card-b);transition:background .3s}
+.wd.now{border-color:rgba(255,159,10,.38)}
+.wd-dow{font-size:10px;font-weight:700;color:var(--txt3);text-transform:uppercase}
+.wd-ic{font-size:22px;margin:5px 0 3px}
+.wd-t{font-size:14px;font-weight:600;color:var(--txt)}
+.wd-p{font-size:10px;color:var(--orange);font-weight:700;margin-top:3px}
+
+/* ════════════════════════════════════════
+   LIST (settings rows)
+════════════════════════════════════════ */
+.list{background:var(--card);border-radius:var(--r);overflow:hidden;margin:0 16px 10px;border:.5px solid var(--card-b);transition:background .3s}
+.lr{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:.5px solid var(--sep2);cursor:pointer;transition:background .15s}
+.lr:last-child{border-bottom:none}
+.lr:active{background:var(--bg3)}
+.lr-ic{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.lr-ic svg{width:17px;height:17px;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.lr-bd{flex:1;min-width:0}
+.lr-t{font-size:16px;font-weight:500;color:var(--txt)}
+.lr-s{font-size:12px;color:var(--txt3);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lr-ch svg{width:14px;height:14px;fill:none;stroke:var(--txt4);stroke-width:2.5;stroke-linecap:round}
+
+/* ════════════════════════════════════════
+   ANNIVERSARY ROWS
+════════════════════════════════════════ */
+.ar{padding:14px 16px;border-bottom:.5px solid var(--sep2);display:flex;justify-content:space-between;align-items:flex-start}
+.ar:last-child{border-bottom:none}
+
+/* ════════════════════════════════════════
+   SEG / PTABS / YSEL
+════════════════════════════════════════ */
+.seg{display:flex;background:var(--bg3);border-radius:9px;padding:2px;margin:0 16px 12px}
+.so{flex:1;padding:7px;text-align:center;font-size:13px;font-weight:600;border-radius:7px;cursor:pointer;color:var(--txt3);transition:all .18s;user-select:none}
+.so.on{background:var(--bg2);color:var(--txt);box-shadow:0 1px 4px rgba(0,0,0,.2)}
+.ptabs{display:flex;background:var(--bg3);border-radius:9px;padding:2px;margin:0 16px 12px}
+.pt{flex:1;padding:7px 4px;text-align:center;font-size:12px;font-weight:700;border-radius:7px;cursor:pointer;color:var(--txt3);transition:all .18s}
+.pt.on{background:var(--bg2);color:var(--txt)}
+.ysel{display:flex;align-items:center;gap:8px;padding:0 16px 10px}
+.yb{width:32px;height:32px;border-radius:8px;background:var(--bg3);border:none;color:var(--txt);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s}
+.yb:active{background:var(--bg4)}
+.yb svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round}
+.yyr{flex:1;text-align:center;font-size:19px;font-weight:700;letter-spacing:-.4px;color:var(--txt)}
+
+/* ════════════════════════════════════════
+   MODAL
+════════════════════════════════════════ */
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);z-index:500;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .26s}
+.mo.open{opacity:1;pointer-events:all}
+.ms{background:var(--bg2);width:100%;max-width:480px;border-radius:24px 24px 0 0;transform:translateY(100%);max-height:92dvh;overflow-y:auto;padding-bottom:calc(var(--safe-b) + 6px);transition:background .3s,transform .34s cubic-bezier(.32,.72,0,1)}
+.mo.open .ms{transform:none}
+@media(min-width:520px){.ms{border-radius:24px;margin-bottom:50px;max-height:82vh}}
+.mh{width:36px;height:4px;background:var(--bg4);border-radius:2px;margin:12px auto 16px}
+.mt{font-size:20px;font-weight:700;padding:0 20px 14px;letter-spacing:-.4px;color:var(--txt)}
+.mb{padding:0 20px}
+
+/* ════════════════════════════════════════
+   FORM
+════════════════════════════════════════ */
+.fg{margin-bottom:14px}
+.fl{font-size:11px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.fi{width:100%;background:var(--input-bg);border:none;border-radius:var(--rs);padding:13px 15px;color:var(--txt);font-size:16px;font-family:inherit;outline:none;-webkit-appearance:none;transition:background .2s}
+.fi:focus{background:var(--input-focus)}
+.fi::placeholder{color:var(--txt4)}
+select.fi{-webkit-appearance:auto;appearance:auto;cursor:pointer}
+.fi,.fi:focus{-webkit-user-select:text;user-select:text;touch-action:auto}
+.page,.ms{touch-action:pan-y;-webkit-overflow-scrolling:touch}
+.wstrip{touch-action:pan-x;-webkit-overflow-scrolling:touch}
+input,textarea,select{-webkit-user-select:text;user-select:text;touch-action:auto}
+
+/* ════════════════════════════════════════
+   BUTTONS
+════════════════════════════════════════ */
+.bp{width:100%;background:var(--orange);border:none;border-radius:var(--rs);padding:15px;color:#000;font-size:17px;font-weight:700;font-family:inherit;cursor:pointer;transition:opacity .15s,transform .1s;letter-spacing:-.3px}
+.bp:active{opacity:.75;transform:scale(.98)}
+.bg{background:var(--bg3);border:none;border-radius:var(--rs);padding:14px;color:var(--txt);font-size:16px;font-weight:600;font-family:inherit;cursor:pointer;width:100%;transition:background .15s}
+.bg:active{background:var(--bg4)}
+.btn-row{display:flex;gap:10px;padding:14px 20px}
+
+/* ════════════════════════════════════════
+   TOGGLE
+════════════════════════════════════════ */
+.tog{width:51px;height:31px;background:var(--bg4);border-radius:16px;position:relative;cursor:pointer;transition:background .28s;flex-shrink:0}
+.tog.on{background:var(--green)}
+.tog::after{content:'';position:absolute;top:2px;left:2px;width:27px;height:27px;background:#fff;border-radius:50%;transition:transform .28s cubic-bezier(.34,1.56,.64,1);box-shadow:0 2px 6px rgba(0,0,0,.3)}
+.tog.on::after{transform:translateX(20px)}
+
+/* ════════════════════════════════════════
+   BADGES / ROWS
+════════════════════════════════════════ */
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:700}
+.b-or{background:rgba(255,159,10,.13);color:var(--orange)}
+.b-gr{background:rgba(48,209,88,.13);color:var(--green)}
+.b-rd{background:rgba(255,69,58,.13);color:var(--red)}
+.b-bl{background:rgba(10,132,255,.13);color:var(--blue)}
+.fr{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:.5px solid var(--sep2)}
+.fr:last-child{border-bottom:none}
+.fr-l{font-size:14px;color:var(--txt2)}
+.fr-v{font-size:15px;font-weight:600;color:var(--txt)}
+.stitle{font-size:11px;font-weight:700;color:var(--txt4);text-transform:uppercase;letter-spacing:.9px;padding:18px 16px 6px}
+.ibox{background:rgba(10,132,255,.08);border:.5px solid rgba(10,132,255,.2);border-radius:var(--rs);padding:12px;font-size:13px;color:var(--txt2);line-height:1.5;margin-bottom:12px}
+[data-theme=light] .ibox{background:rgba(0,122,255,.07);border-color:rgba(0,122,255,.18)}
+
+/* ════════════════════════════════════════
+   SKELETON LOADING
+════════════════════════════════════════ */
+@keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
+.skel{border-radius:8px;background:linear-gradient(90deg,var(--bg3) 25%,var(--bg4) 50%,var(--bg3) 75%);background-size:400px 100%;animation:shimmer 1.4s infinite}
+[data-theme=light] .skel{background:linear-gradient(90deg,#E5E5EA 25%,#D1D1D6 50%,#E5E5EA 75%);background-size:400px 100%}
+#loadOverlay{position:absolute;inset:0;background:var(--bg0);z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .4s;pointer-events:none}
+#loadOverlay.hidden{opacity:0}
+#loadOverlay svg{width:48px;height:48px;color:var(--orange);animation:spin 1.4s linear infinite}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:calc(var(--tabh) + var(--safe-b) + 16px);left:50%;
+  transform:translateX(-50%) translateY(12px);background:var(--bg2);border-radius:22px;
+  padding:10px 20px;font-size:14px;font-weight:500;opacity:0;pointer-events:none;
+  transition:all .26s cubic-bezier(.34,1.4,.64,1);white-space:nowrap;z-index:600;
+  border:.5px solid var(--sep);color:var(--txt);max-width:calc(100vw - 32px);text-align:center;
+  box-shadow:0 4px 20px rgba(0,0,0,.2)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(min-width:520px){.toast{bottom:80px}}
+
+/* ════════════════════════════════════════
+   ANIMATIONS
+════════════════════════════════════════ */
+@keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.ani{animation:fu .32s ease both}
+.d1{animation-delay:.04s}.d2{animation-delay:.09s}.d3{animation-delay:.14s}.d4{animation-delay:.2s}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ══════════════════════════════════
+       AUTH SCREEN
+  ══════════════════════════════════ -->
+  <div id="authScreen">
+    <div class="auth-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="4"/>
+        <line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/>
+        <line x1="4.93" y1="4.93" x2="6.34" y2="6.34"/><line x1="17.66" y1="17.66" x2="19.07" y2="19.07"/>
+        <line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/>
+        <line x1="4.93" y1="19.07" x2="6.34" y2="17.66"/><line x1="17.66" y1="6.34" x2="19.07" y2="4.93"/>
+      </svg>
+      <div class="auth-wordmark">Solar<em>Track</em></div>
+    </div>
+    <div class="auth-sub">Suivi de production solaire & EDF OA</div>
+    <div class="auth-card">
+      <div class="auth-tabs">
+        <div class="auth-tab on" id="atab_conn" onclick="switchAuthTab('conn')">Se connecter</div>
+        <div class="auth-tab" id="atab_creer" onclick="switchAuthTab('creer')">Créer un compte</div>
+      </div>
+      <div class="auth-err" id="auth_err"></div>
+      <div class="fg"><div class="fl">Email</div><input class="fi" type="email" id="auth_email" placeholder="votre@email.com" autocomplete="email" inputmode="email"></div>
+      <div class="fg"><div class="fl">Mot de passe</div><input class="fi" type="password" id="auth_pwd" placeholder="••••••••" autocomplete="current-password"></div>
+      <div class="fg" id="auth_pwd2_fg" style="display:none"><div class="fl">Confirmer le mot de passe</div><input class="fi" type="password" id="auth_pwd2" placeholder="••••••••"></div>
+      <button class="bp" id="auth_btn" onclick="doAuth()">Se connecter</button>
+      <div id="forgotPwd" style="text-align:center;margin-top:12px">
+        <span onclick="doForgotPwd()" style="font-size:13px;color:var(--blue);cursor:pointer;font-weight:500">Mot de passe oublié ?</span>
+      </div>
+      <div class="auth-sep"><span>ou</span></div>
+      <button class="bg" onclick="doAuthGoogle()">
+        <span style="display:flex;align-items:center;justify-content:center;gap:8px">
+          <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          Continuer avec Google
+        </span>
+      </button>
+    </div>
+    <div class="auth-foot">Vos données sont privées et sécurisées.<br>Chaque compte accède uniquement à ses propres relevés.</div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       MAIN APP
+  ══════════════════════════════════ -->
+  <div class="safe-top" id="safeTop"></div>
+  <div class="nav" id="nav">
+    <div class="logo-w">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="4"/>
+        <line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/>
+        <line x1="4.93" y1="4.93" x2="6.34" y2="6.34"/><line x1="17.66" y1="17.66" x2="19.07" y2="19.07"/>
+        <line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/>
+        <line x1="4.93" y1="19.07" x2="6.34" y2="17.66"/><line x1="17.66" y1="6.34" x2="19.07" y2="4.93"/>
+      </svg>
+      <div class="wm">Solar<em>Track</em></div>
+    </div>
+      <div class="nav-right">
+        <div id="syncBadge" style="display:flex;align-items:center;gap:5px;background:var(--bg3);border-radius:20px;padding:4px 10px 4px 7px;transition:background .2s">
+          <div class="sync-dot" id="syncDot"></div>
+          <span id="syncLbl" style="font-size:11px;font-weight:600;color:var(--txt3);transition:color .2s">Sync</span>
+        </div>
+        <button class="nav-btn" onclick="openAddM(null,null)">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </div>
+  </div>
+
+  <div class="pages">
+    <!-- LOADING OVERLAY -->
+    <div id="loadOverlay">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+      </svg>
+      <div style="font-size:14px;color:var(--txt3);font-weight:500">Chargement…</div>
+    </div>
+
+    <!-- PAGE 0 — ACCUEIL -->
+    <div class="page on" id="p0">
+      <div style="height:8px"></div>
+      <div id="p0_welcome" style="display:none;margin:0 16px 10px">
+        <div style="background:linear-gradient(135deg,rgba(255,159,10,.1),rgba(255,214,10,.05));border:.5px solid rgba(255,159,10,.22);border-radius:var(--r);padding:18px">
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <div style="font-size:28px">☀️</div>
+            <div>
+              <div style="font-size:16px;font-weight:700;margin-bottom:5px;color:var(--txt)">Bienvenue sur SolarTrack</div>
+              <div style="font-size:13px;color:var(--txt3);line-height:1.55;margin-bottom:12px">Configurez votre installation et votre contrat EDF OA pour commencer.</div>
+              <button class="bp" style="width:auto;padding:10px 20px;font-size:14px" onclick="goP(3)">Configurer →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="p0_alert" style="display:none;margin:0 16px 10px">
+        <div style="background:rgba(255,69,58,.09);border:.5px solid rgba(255,69,58,.25);border-radius:var(--rs);padding:12px 14px;display:flex;gap:10px;align-items:center">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <div style="font-size:13px;color:var(--txt2)" id="p0_alertMsg"></div>
+        </div>
+      </div>
+      <div class="hero ani d1">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div class="hlabel" id="h0_loc">⚡ Production Solaire</div>
+            <div class="hnum" id="h0_num">0</div>
+            <div class="hunit">kWh produits</div>
+            <div style="font-size:13px;color:var(--txt3);margin-top:4px" id="h0_yr">Année 2025</div>
+          </div>
+          <div style="text-align:right;padding-top:4px">
+            <div style="font-size:11px;color:var(--txt3);margin-bottom:4px">Revenu EDF OA</div>
+            <div style="font-size:28px;font-weight:800;letter-spacing:-.8px;color:var(--green)" id="h0_rev">—</div>
+            <div style="font-size:12px;color:var(--txt4);margin-top:2px" id="h0_rev_lbl">estimé</div>
+          </div>
+        </div>
+        <div style="margin-top:14px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+            <span style="font-size:12px;color:var(--txt3)" id="h0_obj_lbl">Aucun objectif</span>
+            <span style="font-size:12px;color:var(--orange);font-weight:600" id="h0_obj_pct"></span>
+          </div>
+          <div class="prog"><div class="prog-f" id="h0_bar" style="width:0%"></div></div>
+        </div>
+      </div>
+      <div class="stats3 ani d2">
+        <div class="sc"><svg viewBox="0 0 24 24" stroke="var(--orange)" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><div class="sc-v" id="h0_last">—</div><div class="sc-l">Dernier relevé</div></div>
+        <div class="sc"><svg viewBox="0 0 24 24" stroke="var(--yellow)" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><div class="sc-v" id="h0_best">—</div><div class="sc-l">Meilleur mois</div></div>
+        <div class="sc"><svg viewBox="0 0 24 24" stroke="var(--blue)" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg><div class="sc-v" id="h0_avg">—</div><div class="sc-l">Moy./mois</div></div>
+      </div>
+      <div class="sh ani d3"><div class="sh-t">Cette année</div><div class="sh-a" onclick="goP(1)">Relevés ›</div></div>
+      <div class="card ani d3" style="padding:14px 12px"><div style="height:110px"><canvas id="c0bar"></canvas></div></div>
+      <div class="sh ani d3"><div class="sh-t">🌤 Météo & Prévision</div><div class="sh-a" onclick="loadWx(true)">↻</div></div>
+      <div class="wstrip ani d3" id="wstrip"><div style="color:var(--txt4);font-size:13px;padding:8px 0">Chargement…</div></div>
+      <div class="sh ani d4"><div class="sh-t">Contrat EDF OA</div><div class="sh-a" onclick="goP(2)">Détail ›</div></div>
+      <div class="card ani d4" id="h0_edf"><div style="font-size:13px;color:var(--txt3);text-align:center;padding:6px 0">Configurez votre contrat dans Réglages</div></div>
+    </div>
+
+    <!-- PAGE 1 — RELEVÉS -->
+    <div class="page" id="p1">
+      <div style="height:10px"></div>
+      <div class="seg"><div class="so on" id="seg_mens" onclick="setMeth('mensuel')">Production mensuelle</div><div class="so" id="seg_idx" onclick="setMeth('index')">Index compteur</div></div>
+      <div class="ysel">
+        <button class="yb" onclick="chgY(-1)"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <div class="yyr" id="p1_yr">2025</div>
+        <button class="yb" onclick="chgY(1)"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
+      </div>
+      <div class="card" style="padding:14px 16px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><div class="ctitle" style="margin-bottom:3px">Total <span id="p1_yr_lbl">2025</span></div>
+            <div style="font-size:30px;font-weight:700;letter-spacing:-.8px;color:var(--txt)"><span id="p1_total">0</span> <span style="font-size:14px;color:var(--txt3);font-weight:400">kWh</span></div></div>
+          <div style="text-align:right"><div class="badge b-or" id="p1_badge">0 mois</div><div style="font-size:13px;color:var(--green);margin-top:6px;font-weight:600" id="p1_rev">—</div></div>
+        </div>
+      </div>
+      <div class="sh"><div class="sh-t">Relevés mensuels</div><div class="sh-a" onclick="openAddM(null,null)">＋ Ajouter</div></div>
+      <div class="mgrid" id="mgrid"></div>
+      <div class="sh"><div class="sh-t">Graphiques</div></div>
+      <div class="ptabs" id="cTabs"><div class="pt on" onclick="setCTab(0)">Courbe annuelle</div><div class="pt" onclick="setCTab(1)">N vs N-1</div></div>
+      <div class="card" style="padding:14px 12px">
+        <div id="cP0"><div class="ctitle" id="c1_lbl">Production 2025</div><div style="height:160px"><canvas id="c1line"></canvas></div></div>
+        <div id="cP1" style="display:none"><div class="ctitle">Comparaison N vs N-1</div><div style="height:160px"><canvas id="c1comp"></canvas></div><div id="cLeg" style="display:flex;gap:14px;justify-content:center;margin-top:10px"></div></div>
+      </div>
+      <div class="sh"><div class="sh-t">Importer</div></div>
+      <div style="display:flex;gap:8px;padding:0 16px 10px">
+        <label style="flex:1;cursor:pointer"><input type="file" accept=".xlsx,.xls" style="display:none" onchange="importXl(event)">
+          <div style="background:rgba(48,209,88,.1);border:.5px solid rgba(48,209,88,.22);border-radius:var(--rs);padding:14px;text-align:center">
+            <div style="font-size:22px;margin-bottom:4px">📊</div><div style="font-size:13px;font-weight:700;color:var(--green)">Excel .xlsx</div></div></label>
+        <label style="flex:1;cursor:pointer"><input type="file" accept=".csv" style="display:none" onchange="importCsv(event)">
+          <div style="background:rgba(10,132,255,.1);border:.5px solid rgba(10,132,255,.22);border-radius:var(--rs);padding:14px;text-align:center">
+            <div style="font-size:22px;margin-bottom:4px">📄</div><div style="font-size:13px;font-weight:700;color:var(--blue)">CSV</div></div></label>
+      </div>
+    </div>
+
+    <!-- PAGE 2 — EDF OA -->
+    <div class="page" id="p2">
+      <div class="hero hero-edf ani d1">
+        <div class="hlabel hlabel-g">💶 Contrat EDF OA</div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-end">
+          <div><div style="font-size:12px;color:var(--txt3);margin-bottom:4px">Total cumulé depuis le début</div>
+            <div class="hnum hnum-g" id="p2_total">—</div>
+            <div style="font-size:13px;color:var(--green);margin-top:3px;opacity:.9" id="p2_kwh">—</div></div>
+          <div style="text-align:right"><div style="font-size:11px;color:var(--txt3);margin-bottom:4px">Début contrat</div>
+            <div style="font-size:14px;font-weight:700;color:var(--txt)" id="p2_since">—</div>
+            <div style="font-size:12px;color:var(--txt3);margin-top:2px" id="p2_periods">—</div></div>
+        </div>
+      </div>
+      <div class="sh ani d2"><div class="sh-t">Années anniversaire</div><div class="sh-a" onclick="openM('tarifsM')">Gérer tarifs ›</div></div>
+      <div class="list" id="p2_list"></div>
+      <div class="sh ani d3"><div class="sh-t">Autofacture PDF</div></div>
+      <div class="card ani d3">
+        <div class="ctitle">Sélectionner la période</div>
+        <div class="fg"><select class="fi" id="pdf_sel" onchange="calcFact()"><option value="">— Choisir —</option></select></div>
+        <div style="background:var(--bg3);border-radius:var(--rs);padding:14px;margin-bottom:14px;transition:background .3s" id="pdf_prev">
+          <div style="font-size:13px;color:var(--txt4);text-align:center">Sélectionnez une période</div></div>
+        <button class="bp" onclick="genPDF()">
+          <span style="display:flex;align-items:center;justify-content:center;gap:8px">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+            Générer le PDF
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <!-- PAGE 3 — RÉGLAGES -->
+    <div class="page" id="p3">
+      <!-- Compte -->
+      <div class="stitle">MON COMPTE</div>
+      <div class="list">
+        <div class="lr" style="cursor:default">
+          <div class="lr-ic" style="background:rgba(10,132,255,.12)"><svg viewBox="0 0 24 24" stroke="var(--blue)"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg></div>
+          <div class="lr-bd"><div class="lr-t" id="s_email">—</div><div class="lr-s" id="s_sync_lbl">Connecté · synchronisé</div></div>
+          <div class="sync-dot" id="syncDot2"></div>
+        </div>
+        <div class="lr" onclick="doSignOut()">
+          <div class="lr-ic" style="background:rgba(255,69,58,.12)"><svg viewBox="0 0 24 24" stroke="var(--red)"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></div>
+          <div class="lr-bd"><div class="lr-t" style="color:var(--red)">Se déconnecter</div></div>
+          <div class="lr-ch"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </div>
+      </div>
+
+      <div class="stitle">INSTALLATION</div>
+      <div class="list">
+        <div class="lr" onclick="openM('instM')">
+          <div class="lr-ic" style="background:rgba(255,159,10,.12)"><svg viewBox="0 0 24 24" stroke="var(--orange)"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg></div>
+          <div class="lr-bd"><div class="lr-t">Mon installation</div><div class="lr-s" id="s_inst">Non configuré</div></div>
+          <div class="lr-ch"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </div>
+        <div class="lr" onclick="openM('locM')">
+          <div class="lr-ic" style="background:rgba(90,200,250,.12)"><svg viewBox="0 0 24 24" stroke="var(--teal)"><circle cx="12" cy="10" r="3"/><path d="M12 2C7.58 2 4 5.58 4 10c0 5.25 8 12 8 12s8-6.75 8-12c0-4.42-3.58-8-8-8z"/></svg></div>
+          <div class="lr-bd"><div class="lr-t">Localisation météo</div><div class="lr-s" id="s_loc">Non configuré</div></div>
+          <div class="lr-ch"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </div>
+        <div class="lr" onclick="openM('objM')">
+          <div class="lr-ic" style="background:rgba(191,90,242,.12)"><svg viewBox="0 0 24 24" stroke="var(--purple)"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
+          <div class="lr-bd"><div class="lr-t">Objectif annuel</div><div class="lr-s" id="s_obj">Non défini</div></div>
+          <div class="lr-ch"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </div>
+      </div>
+
+      <div class="stitle">CONTRAT EDF OA</div>
+      <div class="list">
+        <div class="lr" onclick="openM('contratM')">
+          <div class="lr-ic" style="background:rgba(48,209,88,.12)"><svg viewBox="0 0 24 24" stroke="var(--green)"><rect x="3" y="4" width="18" height="18" rx="3"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+          <div class="lr-bd"><div class="lr-t">Date début de contrat</div><div class="lr-s" id="s_contrat">Non configuré</div></div>
+          <div class="lr-ch"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </div>
+        <div class="lr" onclick="openM('tarifsM')">
+          <div class="lr-ic" style="background:rgba(10,132,255,.12)"><svg viewBox="0 0 24 24" stroke="var(--blue)"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></div>
+          <div class="lr-bd"><div class="lr-t">Tarifs par période</div><div class="lr-s" id="s_tarifs">Aucun tarif</div></div>
+          <div class="lr-ch"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </div>
+      </div>
+
+      <div class="stitle">PRÉFÉRENCES</div>
+      <div class="list">
+        <div class="lr" style="cursor:default">
+          <div class="lr-ic" style="background:rgba(255,214,10,.12)"><svg viewBox="0 0 24 24" stroke="var(--yellow)"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></div>
+          <div class="lr-bd"><div class="lr-t">Thème</div></div>
+          <div style="display:flex;gap:5px">
+            <button id="tA" onclick="setTheme('auto')" style="font-size:12px;font-weight:600;padding:5px 10px;border-radius:7px;border:none;cursor:pointer;background:var(--bg3);color:var(--txt);transition:background .18s">Auto</button>
+            <button id="tD" onclick="setTheme('dark')" style="font-size:12px;font-weight:600;padding:5px 10px;border-radius:7px;border:none;cursor:pointer;background:var(--bg3);color:var(--txt);transition:background .18s">🌙</button>
+            <button id="tL" onclick="setTheme('light')" style="font-size:12px;font-weight:600;padding:5px 10px;border-radius:7px;border:none;cursor:pointer;background:var(--bg3);color:var(--txt);transition:background .18s">☀️</button>
+          </div>
+        </div>
+        <div class="lr" style="cursor:default">
+          <div class="lr-ic" style="background:rgba(255,159,10,.12)"><svg viewBox="0 0 24 24" stroke="var(--orange)"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+          <div class="lr-bd"><div class="lr-t">Méthode de saisie</div><div class="lr-s" id="s_meth">Mensuel (kWh)</div></div>
+          <div class="tog" id="methTog" onclick="toggleMeth()"></div>
+        </div>
+      </div>
+
+      <div class="stitle">À PROPOS</div>
+      <div class="list">
+        <div class="lr" style="cursor:default">
+          <div class="lr-ic" style="background:rgba(255,159,10,.12)"><svg viewBox="0 0 24 24" stroke="var(--orange)"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="6.34" y2="6.34"/><line x1="17.66" y1="17.66" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/></svg></div>
+          <div class="lr-bd"><div class="lr-t">SolarTrack</div><div class="lr-s">v4.0 · Firebase · iOS & PC</div></div>
+        </div>
+      </div>
+      <div style="height:16px"></div>
+    </div>
+
+  </div><!-- /pages -->
+
+  <div class="tabbar">
+    <div class="tab on" id="tb0" onclick="goP(0)"><svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg><span class="lbl">Accueil</span></div>
+    <div class="tab" id="tb1" onclick="goP(1)"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="3"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="lbl">Relevés</span></div>
+    <div class="tab" id="tb2" onclick="goP(2)"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span class="lbl">EDF OA</span></div>
+    <div class="tab" id="tb3" onclick="goP(3)"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg><span class="lbl">Réglages</span></div>
+  </div>
+</div><!-- /app -->
+
+<!-- MODALS -->
+<div class="mo" id="addM" onclick="closeBg(event,'addM')"><div class="ms">
+  <div class="mh"></div><div class="mt" id="addM_t">Nouveau relevé</div><div class="mb">
+  <div class="fg"><div class="fl">Mois</div><input class="fi" type="month" id="am_mo"></div>
+  <div id="am_mf"><div class="fg"><div class="fl">Production (kWh)</div><input class="fi" type="number" id="am_kwh" placeholder="Ex: 320" step="0.1" inputmode="decimal"></div></div>
+  <div id="am_if" style="display:none">
+    <div class="fg"><div class="fl">Index compteur (kWh total cumulé)</div><input class="fi" type="number" id="am_idx" placeholder="Ex: 18 630" step="1" inputmode="numeric" oninput="calcIdx()"></div>
+    <div class="ibox" id="am_ic">Production calculée : —</div>
+    <div class="fg"><div class="fl">kWh du mois (si pas d'index précédent)</div><input class="fi" type="number" id="am_kwh2" placeholder="Optionnel" step="0.1" inputmode="decimal"></div>
+  </div>
+  <div class="fg" style="margin-bottom:20px"><div class="fl">Note (optionnel)</div><input class="fi" type="text" id="am_note" placeholder="Panne, ombrage…"></div>
+  </div>
+  <div class="btn-row">
+    <button class="bg" id="am_del" style="display:none;flex:1;color:var(--red)" onclick="delRel()">Supprimer</button>
+    <button class="bg" style="flex:1" onclick="closeM('addM')">Annuler</button>
+    <button class="bp" style="flex:2" onclick="saveRel()">Enregistrer</button>
+  </div>
+</div></div>
+
+<div class="mo" id="instM" onclick="closeBg(event,'instM')"><div class="ms">
+  <div class="mh"></div><div class="mt">Mon installation</div><div class="mb">
+  <div class="fg"><div class="fl">Nom</div><input class="fi" id="in_nom" placeholder="Ex: Mes panneaux solaires"></div>
+  <div class="fg"><div class="fl">Ville</div><input class="fi" id="in_ville" placeholder="Ex: Woustviller"></div>
+  <div class="fg"><div class="fl">Nombre de panneaux</div><input class="fi" type="number" id="in_pan" placeholder="16" inputmode="numeric"></div>
+  <div class="fg" style="margin-bottom:20px"><div class="fl">Puissance totale (kWc)</div><input class="fi" type="number" id="in_puiss" placeholder="3" step="0.1" inputmode="decimal"></div>
+  </div><div class="btn-row"><button class="bp" onclick="saveInst()">Sauvegarder</button></div>
+</div></div>
+
+<div class="mo" id="locM" onclick="closeBg(event,'locM')"><div class="ms">
+  <div class="mh"></div><div class="mt">Localisation météo</div><div class="mb">
+  <div class="ibox">Latitude et longitude pour estimer la production via la météo solaire.</div>
+  <div class="fg"><div class="fl">Latitude</div><input class="fi" type="number" id="lo_lat" placeholder="Ex: 49.0800" step="0.0001" inputmode="decimal"></div>
+  <div class="fg" style="margin-bottom:8px"><div class="fl">Longitude</div><input class="fi" type="number" id="lo_lon" placeholder="Ex: 6.6800" step="0.0001" inputmode="decimal"></div>
+  <div style="margin-bottom:20px"><button class="bg" onclick="autoGPS()">📍 Utiliser ma position GPS</button></div>
+  </div><div class="btn-row"><button class="bp" onclick="saveLoc()">Sauvegarder</button></div>
+</div></div>
+
+<div class="mo" id="objM" onclick="closeBg(event,'objM')"><div class="ms">
+  <div class="mh"></div><div class="mt">Objectif annuel</div><div class="mb">
+  <div class="fg"><div class="fl">Année</div><input class="fi" type="number" id="ob_yr" inputmode="numeric"></div>
+  <div class="fg" style="margin-bottom:20px"><div class="fl">Objectif (kWh)</div><input class="fi" type="number" id="ob_kwh" placeholder="Ex: 3000" inputmode="numeric"></div>
+  </div><div class="btn-row"><button class="bp" onclick="saveObj()">Enregistrer</button></div>
+</div></div>
+
+<div class="mo" id="contratM" onclick="closeBg(event,'contratM')"><div class="ms">
+  <div class="mh"></div><div class="mt">Date début de contrat</div><div class="mb">
+  <div class="ibox">Date de votre 1ère facture EDF OA. Chaque anniversaire = nouvelle période tarifaire.</div>
+  <div class="fg" style="margin-bottom:20px"><div class="fl">Date de début</div><input class="fi" type="date" id="co_date"></div>
+  </div><div class="btn-row"><button class="bp" onclick="saveContrat()">Enregistrer</button></div>
+</div></div>
+
+<div class="mo" id="tarifsM" onclick="closeBg(event,'tarifsM')"><div class="ms">
+  <div class="mh"></div><div class="mt">Tarifs EDF OA</div><div class="mb">
+  <div class="ibox">Tarif €/kWh pour chaque période anniversaire (sur vos autofactures EDF OA). Ajoutez-les dans l'ordre chronologique.</div>
+  <div id="tarifsList" style="margin-bottom:12px"></div>
+  <button class="bg" onclick="addTRow()" style="margin-bottom:20px">＋ Ajouter une période</button>
+  </div><div class="btn-row"><button class="bp" onclick="saveTarifs()">Sauvegarder</button></div>
+</div></div>
+
+<div class="mo" id="xlM" onclick="closeBg(event,'xlM')"><div class="ms">
+  <div class="mh"></div><div class="mt">📊 Import Excel</div><div class="mb">
+  <div style="font-size:12px;color:var(--txt4);margin-bottom:12px" id="xl_info">—</div>
+  <div style="display:flex;gap:10px;margin-bottom:12px">
+    <div style="flex:1"><div class="fl">Colonne DATE</div><select class="fi" id="xl_dc"><option value="">—</option></select></div>
+    <div style="flex:1"><div class="fl">Colonne kWh</div><select class="fi" id="xl_kc"><option value="">—</option></select></div>
+  </div>
+  <div class="fg"><div class="fl">Aperçu</div><div id="xl_prev" style="background:var(--bg3);border-radius:var(--rs);padding:10px;font-size:11px;overflow-x:auto;max-height:100px"></div></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:.5px solid var(--sep2);margin-bottom:20px">
+    <span style="font-size:14px;color:var(--txt)">Ignorer la 1ère ligne</span>
+    <div class="tog on" id="xl_skip" onclick="this.classList.toggle('on')"></div>
+  </div>
+  </div><div class="btn-row"><button class="bg" style="flex:1" onclick="closeM('xlM')">Annuler</button><button class="bp" style="flex:2" onclick="doXl()">Importer</button></div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// PREVENT ZOOM (double-tap + pinch) on iOS
+// ═══════════════════════════════════════════════════
+document.addEventListener('touchstart', e => {
+  if(e.touches.length > 1) e.preventDefault();
+}, { passive: false });
+
+let lastTap = 0;
+document.addEventListener('touchend', e => {
+  const now = Date.now();
+  if(now - lastTap < 300 && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'SELECT') {
+    e.preventDefault();
+  }
+  lastTap = now;
+}, { passive: false });
+
+document.addEventListener('gesturestart', e => e.preventDefault(), { passive: false });
+document.addEventListener('gesturechange', e => e.preventDefault(), { passive: false });
+
+// ═══════════════════════════════════════════════════
+// FIREBASE CONFIG
+// ═══════════════════════════════════════════════════
+const FB_CFG = {
+  apiKey: "AIzaSyBSdWfW84UevDC8U8l9FWqPv645r5IqBX4",
+  authDomain: "solairepro-61f4f.firebaseapp.com",
+  projectId: "solairepro-61f4f",
+  storageBucket: "solairepro-61f4f.firebasestorage.app",
+  messagingSenderId: "1098046920073",
+  appId: "1:1098046920073:web:82af8bcc6f005d6afabd58"
+};
+firebase.initializeApp(FB_CFG);
+const auth = firebase.auth();
+const db   = firebase.firestore();
+let currentUser = null;
+
+// ═══════════════════════════════════════════════════
+// DOM HELPERS
+// ═══════════════════════════════════════════════════
+const $  = id => document.getElementById(id);
+const $t = (id,v) => { const e=$(id); if(e) e.textContent=v; };
+const $h = (id,v) => { const e=$(id); if(e) e.innerHTML=v; };
+const $v = (id,v) => { const e=$(id); if(e) e.value=v; };
+const $d = (id,v) => { const e=$(id); if(e) e.style.display=v; };
+
+// ═══════════════════════════════════════════════════
+// DATA STORE
+// ═══════════════════════════════════════════════════
+const DEF = {
+  settings:{ nom:'', ville:'', lat:null, lon:null, panneaux:16, puissance:3, theme:'auto', methode:'mensuel' },
+  tarifs:[], contratDebut:'', releves:{}, objectifs:{}
+};
+let D = JSON.parse(JSON.stringify(DEF));
+// Local fallback (thème & méthode survivent sans connexion)
+try{ const ls=localStorage.getItem('st_local'); if(ls){ const p=JSON.parse(ls); D.settings.theme=p.theme||'auto'; D.settings.methode=p.methode||'mensuel'; } }catch(e){}
+
+// Sync state
+let syncPending = false;
+let saveTimer   = null;
+
+function setSyncDot(state){ // 'ok' | 'syncing' | 'offline'
+  ['syncDot','syncDot2'].forEach(id=>{
+    const e=$(id); if(!e)return;
+    e.className='sync-dot'+(state==='syncing'?' syncing':state==='offline'?' offline':'');
+  });
+  const lbl=$('syncLbl');
+  if(lbl){ lbl.textContent=state==='ok'?'OK':state==='syncing'?'…':'Off'; lbl.style.color=state==='ok'?'var(--green)':state==='syncing'?'var(--yellow)':'var(--red)'; }
+  $t('s_sync_lbl', state==='ok'?'Connecté · synchronisé': state==='syncing'?'Synchronisation…':'Hors ligne');
+}
+
+// ── LOAD FROM FIRESTORE ──
+async function loadFromCloud(){
+  if(!currentUser) return;
+  setSyncDot('syncing');
+  try{
+    const doc = await db.collection('users').doc(currentUser.uid).collection('data').doc('main').get();
+    if(doc.exists){
+      const p = doc.data();
+      D = { ...DEF, ...p };
+      ['settings','releves','objectifs'].forEach(k=>{ if(!D[k]||typeof D[k]!=='object') D[k]=JSON.parse(JSON.stringify(DEF[k])); });
+      if(!Array.isArray(D.tarifs)) D.tarifs=[];
+      saveLocal();
+    }
+    setSyncDot('ok');
+    // Hide loading overlay
+    const ov=$('loadOverlay'); if(ov){ ov.classList.add('hidden'); setTimeout(()=>{ov.style.display='none'},450); }
+  }catch(e){ console.error('load',e); setSyncDot('offline');
+    const ov=$('loadOverlay'); if(ov){ ov.classList.add('hidden'); setTimeout(()=>{ov.style.display='none'},450); }
+  }
+}
+
+// ── SAVE TO FIRESTORE (debounced 1.5s) ──
+function save(){
+  saveLocal();
+  if(!currentUser){ setSyncDot('offline'); return; }
+  clearTimeout(saveTimer);
+  setSyncDot('syncing');
+  saveTimer = setTimeout(async ()=>{
+    try{
+      await db.collection('users').doc(currentUser.uid).collection('data').doc('main').set(D);
+      setSyncDot('ok');
+    }catch(e){ console.error('save',e); setSyncDot('offline'); }
+  }, 1500);
+}
+
+function saveLocal(){
+  try{ localStorage.setItem('st_local', JSON.stringify({ theme: D.settings.theme, methode: D.settings.methode })); }catch(e){}
+}
+
+// ═══════════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════════
+let authTab = 'conn';
+function switchAuthTab(t){
+  authTab=t;
+  $('atab_conn').classList.toggle('on', t==='conn');
+  $('atab_creer').classList.toggle('on', t==='creer');
+  $d('auth_pwd2_fg', t==='creer'?'block':'none');
+  $d('forgotPwd', t==='creer'?'none':'block');
+  $t('auth_btn', t==='conn'?'Se connecter':'Créer mon compte');
+  $t('auth_err','');
+}
+
+async function doAuth(){
+  const email = $('auth_email')?.value?.trim();
+  const pwd   = $('auth_pwd')?.value;
+  const pwd2  = $('auth_pwd2')?.value;
+  $t('auth_err','');
+  if(!email||!pwd){ $t('auth_err','Email et mot de passe requis'); return; }
+  const btn=$('auth_btn'); if(btn){ btn.textContent='…'; btn.disabled=true; }
+  try{
+    if(authTab==='conn'){
+      await auth.signInWithEmailAndPassword(email, pwd);
+    } else {
+      if(pwd!==pwd2){ $t('auth_err','Les mots de passe ne correspondent pas'); return; }
+      if(pwd.length<6){ $t('auth_err','Mot de passe trop court (min. 6 caractères)'); return; }
+      await auth.createUserWithEmailAndPassword(email, pwd);
+    }
+  } catch(e){
+    const msgs={ 'auth/user-not-found':'Compte introuvable','auth/wrong-password':'Mot de passe incorrect','auth/email-already-in-use':'Email déjà utilisé','auth/invalid-email':'Email invalide','auth/network-request-failed':'Pas de connexion réseau','auth/invalid-credential':'Email ou mot de passe incorrect' };
+    $t('auth_err', msgs[e.code]||e.message);
+  } finally {
+    const btn=$('auth_btn'); if(btn){ btn.textContent=authTab==='conn'?'Se connecter':'Créer mon compte'; btn.disabled=false; }
+  }
+}
+
+async function doForgotPwd(){
+  const email=$('auth_email')?.value?.trim();
+  if(!email){ $t('auth_err','Saisissez votre email d\'abord'); return; }
+  try{
+    await auth.sendPasswordResetEmail(email);
+    $t('auth_err',''); 
+    toast('Email de réinitialisation envoyé 📧');
+  }catch(e){
+    const msgs={'auth/user-not-found':'Aucun compte avec cet email','auth/invalid-email':'Email invalide'};
+    $t('auth_err', msgs[e.code]||e.message);
+  }
+}
+
+async function doAuthGoogle(){
+  const provider = new firebase.auth.GoogleAuthProvider();
+  try{ await auth.signInWithPopup(provider); }
+  catch(e){ $t('auth_err', e.code==='auth/popup-closed-by-user'?'Connexion annulée':e.message); }
+}
+
+async function doSignOut(){
+  if(!confirm('Se déconnecter ?')) return;
+  await auth.signOut();
+}
+
+// Keyboard Enter on auth form
+document.addEventListener('keydown', e=>{ if(e.key==='Enter' && $('authScreen')?.style.display!=='none') doAuth(); });
+
+// ── AUTH STATE OBSERVER ──
+auth.onAuthStateChanged(async user => {
+  currentUser = user;
+  if(user){
+    $d('authScreen','none');
+    $t('s_email', user.email||user.displayName||'Utilisateur');
+    applyTheme();
+    await loadFromCloud();
+    goP(0);
+    loadWx().catch(()=>{});
+  } else {
+    $d('authScreen','flex');
+    setSyncDot('offline');
+  }
+});
+
+// ═══════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════
+const MN = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+const MF = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+const fmt  = (n,d=0) => n==null||isNaN(n)?'—':n.toFixed(d).replace(/\B(?=(\d{3})+(?!\d))/g,'\u202F');
+const fmtE = n => n==null||isNaN(n)?'—':n.toFixed(2).replace('.',',')+'\u202F€';
+const fmtDS= s => { if(!s)return'—'; try{ return new Date(s+'T12:00:00').toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'}); }catch{return s} };
+const curYM= () => { const d=new Date(); return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; };
+const totY = y => Object.entries(D.releves).filter(([k])=>k.startsWith(y+'-')).reduce((s,[,v])=>s+(v.kwh||0),0);
+const prevMo = ym => { const[y,m]=ym.split('-').map(Number); return m===1?`${y-1}-12`:`${y}-${String(m-1).padStart(2,'0')}`; };
+const allYears = () => [...new Set(Object.keys(D.releves).map(k=>k.split('-')[0]))].sort();
+
+// Charts
+const CHS = {};
+const mkChart = (id,cfg) => { if(CHS[id]){CHS[id].destroy();delete CHS[id]} const c=$(id); if(!c)return; CHS[id]=new Chart(c,cfg); return CHS[id]; };
+Chart.defaults.font.family = '-apple-system,"SF Pro Text",system-ui,sans-serif';
+Chart.defaults.font.size   = 11;
+const isDark = () => { const t=D.settings.theme||'auto'; return t==='dark'?true:t==='light'?false:window.matchMedia('(prefers-color-scheme:dark)').matches; };
+
+// ═══════════════════════════════════════════════════
+// THEME
+// ═══════════════════════════════════════════════════
+function setTheme(t){
+  D.settings.theme=t; save();
+  if(t==='auto') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme',t);
+  ['tA','tD','tL'].forEach(id=>{ const e=$(id); if(e)e.style.background='var(--bg3)'; });
+  const m={auto:'tA',dark:'tD',light:'tL'}; const btn=$(m[t]); if(btn)btn.style.background='var(--orange)';
+  Chart.defaults.color = isDark()?'rgba(235,235,245,.5)':'rgba(0,0,0,.45)';
+  if(curP===0) r0(); else if(curP===1) buildCharts();
+}
+const applyTheme = () => setTheme(D.settings.theme||'auto');
+
+// ═══════════════════════════════════════════════════
+// EDF OA — CALCULS
+// ═══════════════════════════════════════════════════
+function getPeriods(){
+  if(!D.contratDebut||!D.tarifs.length) return [];
+  const[Y,M,Dd]=D.contratDebut.split('-').map(Number);
+  return D.tarifs.map((tarif,i)=>{
+    const from=new Date(Y+i,M-1,Dd,12,0,0);
+    const toD=new Date(Y+i+1,M-1,Dd); toD.setDate(toD.getDate()-1);
+    const to=new Date(toD.getFullYear(),toD.getMonth(),toD.getDate(),23,59,59);
+    return{index:i,from,to,tarif:tarif||0};
+  });
+}
+
+function calcPeriod(p){
+  let kWh=0;
+  Object.entries(D.releves).forEach(([ym,r])=>{
+    if(!r?.kwh) return;
+    const[y,m]=ym.split('-').map(Number);
+    const mS=new Date(y,m-1,1), mE=new Date(y,m,0);
+    if(mE<p.from||mS>p.to) return;
+    const oS=mS<p.from?p.from:mS, oE=mE>p.to?p.to:mE;
+    const sd=new Date(oS.getFullYear(),oS.getMonth(),oS.getDate());
+    const ed=new Date(oE.getFullYear(),oE.getMonth(),oE.getDate());
+    kWh += r.kwh * (Math.round((ed-sd)/864e5)+1) / mE.getDate();
+  });
+  return { kwh:kWh, rev:kWh*(p.tarif||0) };
+}
+
+function getMonthRev(ym){
+  const ps=getPeriods(); if(!ps.length) return null;
+  const r=D.releves[ym]; if(!r?.kwh) return null;
+  const[y,m]=ym.split('-').map(Number);
+  const mS=new Date(y,m-1,1), mE=new Date(y,m,0), dIM=mE.getDate();
+  let rev=0;
+  ps.forEach(p=>{
+    if(mE<p.from||mS>p.to) return;
+    const oS=mS<p.from?p.from:mS, oE=mE>p.to?p.to:mE;
+    const sd=new Date(oS.getFullYear(),oS.getMonth(),oS.getDate());
+    const ed=new Date(oE.getFullYear(),oE.getMonth(),oE.getDate());
+    rev += r.kwh*(Math.round((ed-sd)/864e5)+1)/dIM*(p.tarif||0);
+  });
+  return rev;
+}
+const getYearRev = y => { let t=0; for(let m=1;m<=12;m++){const r=getMonthRev(`${y}-${String(m).padStart(2,'0')}`);if(r)t+=r;} return t; };
+
+// ═══════════════════════════════════════════════════
+// NAV
+// ═══════════════════════════════════════════════════
+let curP=0;
+function goP(n){
+  document.querySelectorAll('.page').forEach((p,i)=>p.classList.toggle('on',i===n));
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('on',i===n));
+  curP=n;
+  if(n===0)r0(); else if(n===1)r1(); else if(n===2)r2(); else if(n===3)r3();
+}
+
+// ═══════════════════════════════════════════════════
+// PAGE 0 — ACCUEIL
+// ═══════════════════════════════════════════════════
+function r0(){
+  const yr=new Date().getFullYear(), ym=curYM();
+  const total=totY(yr);
+  const configured=!!(D.settings.nom||D.contratDebut||Object.keys(D.releves).length);
+  $d('p0_welcome',!configured?'block':'none');
+  $t('h0_loc', D.settings.nom?`⚡ ${D.settings.nom}`:'⚡ Production Solaire');
+  $t('h0_num', fmt(total));
+  $t('h0_yr', `Année ${yr}`+(D.settings.ville?` • ${D.settings.ville}`:''));
+  const yRev=getYearRev(yr);
+  $t('h0_rev', yRev?fmtE(yRev):'—');
+  $t('h0_rev_lbl', D.tarifs.length?`revenu EDF OA ${yr}`:'→ configurez vos tarifs');
+  const obj=D.objectifs[yr];
+  if(obj){ const pct=Math.min(100,total/obj*100); $t('h0_obj_lbl',`Objectif ${fmt(obj,0)} kWh`); $t('h0_obj_pct',pct.toFixed(0)+'%'); setTimeout(()=>{const e=$('h0_bar');if(e)e.style.width=pct+'%'},60); }
+  else { $t('h0_obj_lbl','Aucun objectif'); $t('h0_obj_pct',''); setTimeout(()=>{const e=$('h0_bar');if(e)e.style.width='0%'},60); }
+  const tm=D.releves[ym];
+  // Dernier relevé saisi (pas forcément le mois en cours)
+  const sortedKeys=Object.keys(D.releves).filter(k=>D.releves[k]?.kwh>0).sort();
+  const lastKey=sortedKeys[sortedKeys.length-1];
+  const lastR=lastKey?D.releves[lastKey]:null;
+  if(lastR&&lastKey){
+    const[ly,lm]=lastKey.split('-');
+    $t('h0_last', fmt(lastR.kwh,0)+' kWh');
+    const sc=$('h0_last')?.parentElement?.querySelector('.sc-l');
+    if(sc) sc.textContent=MN[parseInt(lm)-1]+' '+ly;
+  } else { $t('h0_last','—'); }
+  // Meilleur mois de l'année
+  const yrEntries=Object.entries(D.releves).filter(([k])=>k.startsWith(yr+'-')&&D.releves[k]?.kwh>0);
+  const bestEntry=yrEntries.length?yrEntries.reduce((a,b)=>b[1].kwh>a[1].kwh?b:a):null;
+  if(bestEntry){
+    const[,bm]=bestEntry[0].split('-');
+    $t('h0_best', fmt(bestEntry[1].kwh,0)+' kWh');
+    const sc=$('h0_best')?.parentElement?.querySelector('.sc-l');
+    if(sc) sc.textContent='Pic · '+MN[parseInt(bm)-1];
+  } else { $t('h0_best','—'); }
+  const yVals=Object.entries(D.releves).filter(([k])=>k.startsWith(yr+'-')).map(([,v])=>v.kwh||0);
+  $t('h0_avg', yVals.length?fmt(yVals.reduce((a,b)=>a+b,0)/yVals.length,0)+' kWh':'—');
+  // Alert
+  const prev=prevMo(ym);
+  if(!D.releves[prev]&&D.contratDebut){ $d('p0_alert','block'); $t('p0_alertMsg',`Relevé de ${MF[parseInt(prev.split('-')[1])-1]} manquant`); }
+  else $d('p0_alert','none');
+  // Mini bar
+  const vals=[],lbls=[];
+  for(let m=1;m<=12;m++){ vals.push(D.releves[`${yr}-${String(m).padStart(2,'0')}`]?.kwh||0); lbls.push(MN[m-1]); }
+  const dark=isDark(), gc=dark?'rgba(255,255,255,.05)':'rgba(0,0,0,.05)';
+  mkChart('c0bar',{type:'bar',data:{labels:lbls,datasets:[{data:vals,backgroundColor:vals.map((_,i)=>i===new Date().getMonth()?'rgba(255,159,10,.95)':'rgba(255,159,10,.32)'),borderRadius:5,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.raw,0)+' kWh'}}},
+    scales:{x:{grid:{display:false},ticks:{font:{size:9}}},y:{grid:{color:gc},beginAtZero:true,ticks:{font:{size:9}}}}}});
+  buildHomeEdf();
+}
+
+function buildHomeEdf(){
+  const el=$('h0_edf'); if(!el)return;
+  const ps=getPeriods();
+  if(!ps.length){ el.innerHTML='<div style="font-size:13px;color:var(--txt3);text-align:center;padding:6px 0">Configurez votre contrat dans <span style="color:var(--blue);cursor:pointer" onclick="goP(3)">Réglages</span></div>'; return; }
+  let gR=0,gK=0; ps.forEach(p=>{const r=calcPeriod(p);gR+=r.rev;gK+=r.kwh;});
+  let html='<div class="ctitle">Dernières périodes</div>';
+  ps.slice(-2).reverse().forEach(p=>{
+    const r=calcPeriod(p);
+    html+=`<div class="fr"><div><div class="fr-l">Période ${p.index+1}</div><div style="font-size:11px;color:var(--txt4);margin-top:1px">${fmtDS(p.from.toISOString().split('T')[0])} → ${fmtDS(p.to.toISOString().split('T')[0])}</div><div style="font-size:12px;color:var(--orange);margin-top:2px;font-weight:600">${p.tarif.toFixed(4)} €/kWh</div></div><div style="text-align:right"><div style="font-size:17px;font-weight:700;color:var(--green)">${fmtE(r.rev)}</div><div style="font-size:11px;color:var(--txt3);margin-top:2px">${fmt(r.kwh,0)} kWh</div></div></div>`;
+  });
+  html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:.5px solid var(--sep2);margin-top:4px"><span style="font-size:14px;font-weight:600;color:var(--txt)">Total cumulé</span><span style="font-size:19px;font-weight:800;color:var(--green)">${fmtE(gR)}</span></div>`;
+  el.innerHTML=html;
+}
+
+// ═══════════════════════════════════════════════════
+// PAGE 1 — RELEVÉS
+// ═══════════════════════════════════════════════════
+let dY=new Date().getFullYear(), cTab=0;
+const meth=()=>D.settings.methode||'mensuel';
+function setMeth(m){ D.settings.methode=m; save(); syncMethUI(); r1(); }
+const toggleMeth=()=>setMeth(meth()==='mensuel'?'index':'mensuel');
+const chgY=d=>{ dY+=d; r1(); };
+function syncMethUI(){
+  const me=meth();
+  const e1=$('seg_mens'),e2=$('seg_idx');
+  if(e1)e1.classList.toggle('on',me==='mensuel'); if(e2)e2.classList.toggle('on',me==='index');
+  const t=$('methTog'); if(t)t.classList.toggle('on',me==='index');
+  $t('s_meth',me==='index'?'Index compteur':'Mensuel (kWh)');
+}
+
+function r1(){
+  syncMethUI();
+  $t('p1_yr',dY); $t('p1_yr_lbl',dY);
+  const total=totY(dY); $t('p1_total',fmt(total));
+  const entries=Object.entries(D.releves).filter(([k])=>k.startsWith(dY+'-'));
+  const b=$('p1_badge'); if(b)b.textContent=entries.length+' mois';
+  const yRev=getYearRev(dY); $t('p1_rev',yRev?'Revenu: '+fmtE(yRev):'—');
+  // Grid
+  const grid=$('mgrid'); if(!grid)return; grid.innerHTML='';
+  const ym=curYM();
+  const allKwh=Object.values(D.releves).map(r=>r.kwh||0).filter(Boolean);
+  const maxK=allKwh.length?Math.max(...allKwh):1;
+  for(let mn=1;mn<=12;mn++){
+    const k=`${dY}-${String(mn).padStart(2,'0')}`;
+    const r=D.releves[k]; const rev=r?getMonthRev(k):null;
+    const bw=r?((r.kwh||0)/maxK*100).toFixed(1):0;
+    const cell=document.createElement('div');
+    cell.className='mc'+(r?' has':'')+(k===ym?' cur':'');
+    cell.innerHTML=`<div class="mc-name">${MN[mn-1]}</div>`
+      +(r?`<div class="mc-kwh">${fmt(r.kwh,0)}<span style="font-size:10px;color:var(--txt3);font-weight:400"> kWh</span></div>`
+          +(rev?`<div class="mc-rev">${fmtE(rev)}</div>`:'')
+          +`<div class="mc-bar" style="width:${bw}%"></div>`
+        :`<div class="mc-kwh empty">—</div><div style="position:absolute;top:8px;right:9px;color:var(--txt4);font-size:17px;font-weight:300;line-height:1">＋</div>`);
+    cell.onclick=()=>openAddM(k,r);
+    grid.appendChild(cell);
+  }
+  buildCharts();
+}
+
+function setCTab(n){
+  cTab=n;
+  document.querySelectorAll('#cTabs .pt').forEach((t,i)=>t.classList.toggle('on',i===n));
+  $d('cP0',n===0?'block':'none'); $d('cP1',n===1?'block':'none');
+  buildCharts();
+}
+
+function buildCharts(){
+  const dark=isDark(), gc=dark?'rgba(255,255,255,.05)':'rgba(0,0,0,.05)';
+  Chart.defaults.color=dark?'rgba(235,235,245,.5)':'rgba(0,0,0,.45)';
+  if(cTab===0){
+    const vals=[],lbls=[];
+    for(let m=1;m<=12;m++){const k=`${dY}-${String(m).padStart(2,'0')}`;vals.push(D.releves[k]?.kwh||null);lbls.push(MN[m-1]);}
+    $t('c1_lbl',`Production ${dY} (kWh)`);
+    const cv=$('c1line'); if(!cv)return;
+    const ctx=cv.getContext('2d'),g=ctx.createLinearGradient(0,0,0,160);
+    g.addColorStop(0,'rgba(255,159,10,.36)'); g.addColorStop(1,'rgba(255,159,10,.01)');
+    mkChart('c1line',{type:'line',data:{labels:lbls,datasets:[{data:vals,borderColor:'#FF9F0A',backgroundColor:g,borderWidth:2.5,tension:.42,fill:true,spanGaps:true,pointBackgroundColor:'#FF9F0A',pointRadius:3.5,pointHoverRadius:7}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw?fmt(c.raw,0)+' kWh':'—'}}},
+        scales:{x:{grid:{display:false}},y:{grid:{color:gc},beginAtZero:true}}}});
+  } else {
+    const yrs=allYears(),y1=yrs[yrs.length-1]||String(dY),y2=yrs[yrs.length-2]||String(dY-1);
+    const v1=[],v2=[];
+    for(let m=1;m<=12;m++){const km=String(m).padStart(2,'0');v1.push(D.releves[`${y1}-${km}`]?.kwh||0);v2.push(D.releves[`${y2}-${km}`]?.kwh||0);}
+    $h('cLeg',`<div style="display:flex;gap:6px;align-items:center"><span style="width:10px;height:10px;border-radius:50%;background:var(--orange);display:inline-block"></span><span style="font-size:12px;color:var(--txt3)">${y1}</span></div><div style="display:flex;gap:6px;align-items:center"><span style="width:10px;height:10px;border-radius:50%;background:var(--blue);display:inline-block"></span><span style="font-size:12px;color:var(--txt3)">${y2}</span></div>`);
+    mkChart('c1comp',{type:'bar',data:{labels:MN,datasets:[{data:v1,backgroundColor:'rgba(255,159,10,.82)',borderRadius:4,borderSkipped:false},{data:v2,backgroundColor:'rgba(10,132,255,.62)',borderRadius:4,borderSkipped:false}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.raw,0)+' kWh'}}},
+        scales:{x:{grid:{display:false}},y:{grid:{color:gc},beginAtZero:true}}}});
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// PAGE 2 — EDF OA
+// ═══════════════════════════════════════════════════
+function r2(){
+  const ps=getPeriods(); let gK=0,gR=0; ps.forEach(p=>{const r=calcPeriod(p);gK+=r.kwh;gR+=r.rev;});
+  $t('p2_total', gR?fmtE(gR):'—'); $t('p2_kwh', gK?fmt(gK,0)+' kWh injectés':'—');
+  $t('p2_since', D.contratDebut?fmtDS(D.contratDebut):'—');
+  $t('p2_periods', ps.length?ps.length+' période'+(ps.length>1?'s':''):'0 période');
+  const list=$('p2_list'); if(!list)return;
+  if(!ps.length){ list.innerHTML='<div style="padding:18px;text-align:center;font-size:14px;color:var(--txt3)">Configurez votre contrat dans <span style="color:var(--blue);cursor:pointer" onclick="goP(3)">Réglages</span></div>'; return; }
+  const now=new Date(); list.innerHTML='';
+  ps.slice().reverse().forEach(p=>{
+    const r=calcPeriod(p); const active=now>=p.from&&now<=p.to;
+    const row=document.createElement('div'); row.className='ar';
+    row.innerHTML=`<div><div style="font-size:14px;font-weight:600;color:var(--txt)">Période ${p.index+1} ${active?'<span class="badge b-gr" style="font-size:10px">En cours</span>':''}</div>
+      <div style="font-size:11px;color:var(--txt3);margin-top:2px">${fmtDS(p.from.toISOString().split('T')[0])} → ${fmtDS(p.to.toISOString().split('T')[0])}</div>
+      <div style="font-size:13px;color:var(--orange);font-weight:700;margin-top:4px">${p.tarif.toFixed(4)} €/kWh</div></div>
+      <div style="text-align:right"><div style="font-size:18px;font-weight:700;color:var(--green)">${fmtE(r.rev)}</div><div style="font-size:12px;color:var(--txt3);margin-top:3px">${fmt(r.kwh,0)} kWh</div></div>`;
+    list.appendChild(row);
+  });
+  // PDF sel
+  const sel=$('pdf_sel'); if(sel){
+    sel.innerHTML='<option value="">— Choisir une période —</option>';
+    ps.forEach(p=>{ const o=document.createElement('option'); o.value=p.index; o.textContent=`Période ${p.index+1} : ${fmtDS(p.from.toISOString().split('T')[0])} → ${fmtDS(p.to.toISOString().split('T')[0])}`; sel.appendChild(o); });
+  }
+  $h('pdf_prev','<div style="font-size:13px;color:var(--txt4);text-align:center">Sélectionnez une période</div>');
+}
+
+function calcFact(){
+  const sel=$('pdf_sel'); if(!sel||sel.value==='')return;
+  const ps=getPeriods(), p=ps[parseInt(sel.value)]; if(!p)return;
+  const r=calcPeriod(p);
+  $h('pdf_prev',`<div class="fr"><span class="fr-l">Période</span><span class="fr-v">${fmtDS(p.from.toISOString().split('T')[0])} → ${fmtDS(p.to.toISOString().split('T')[0])}</span></div>
+    <div class="fr"><span class="fr-l">Tarif EDF OA</span><span class="fr-v" style="color:var(--orange)">${p.tarif.toFixed(4)} €/kWh</span></div>
+    <div class="fr"><span class="fr-l">kWh injectés</span><span class="fr-v">${fmt(r.kwh,1)} kWh</span></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:.5px solid var(--sep2);margin-top:2px">
+      <span style="font-size:15px;font-weight:700;color:var(--txt)">Montant à percevoir</span>
+      <span style="font-size:24px;font-weight:800;color:var(--green)">${fmtE(r.rev)}</span></div>`);
+}
+
+// ═══════════════════════════════════════════════════
+// PAGE 3 — RÉGLAGES
+// ═══════════════════════════════════════════════════
+function r3(){
+  const s=D.settings;
+  const ip=[s.nom,s.panneaux?s.panneaux+' panneaux':'',s.puissance?s.puissance+' kWc':''].filter(Boolean);
+  $t('s_inst', ip.length?ip.join(' • '):'Non configuré');
+  $t('s_loc', s.lat&&s.lon?`${s.lat}, ${s.lon}`+(s.ville?` (${s.ville})`:''):'Non configuré');
+  const yr=new Date().getFullYear(); $t('s_obj', D.objectifs[yr]?`${fmt(D.objectifs[yr],0)} kWh en ${yr}`:'Non défini');
+  $t('s_contrat', D.contratDebut?`Depuis le ${fmtDS(D.contratDebut)}`:'Non configuré');
+  $t('s_tarifs', D.tarifs.length?`${D.tarifs.length} période${D.tarifs.length>1?'s':''}`:'Aucun tarif');
+  syncMethUI();
+  const t=s.theme||'auto'; ['tA','tD','tL'].forEach(id=>{const e=$(id);if(e)e.style.background='var(--bg3)';}); const btn=$({auto:'tA',dark:'tD',light:'tL'}[t]); if(btn)btn.style.background='var(--orange)';
+  $t('s_email', currentUser?.email||currentUser?.displayName||'—');
+}
+
+// ═══════════════════════════════════════════════════
+// MÉTÉO
+// ═══════════════════════════════════════════════════
+let wxCache=null, wxTime=0;
+const wxIcon=c=>{const m={0:['☀️',1],1:['🌤',.88],2:['⛅',.65],3:['☁️',.42],45:['🌫',.3],51:['🌦',.28],61:['🌧',.22],63:['🌧',.18],71:['❄️',.28],80:['🌦',.32],95:['⛈',.16]};return m[c]||['🌤',.55];};
+const estProd=(rad,code)=>((rad||0)*(D.settings.puissance||3)*.8*wxIcon(code)[1]).toFixed(1);
+async function loadWx(force=false){
+  const el=$('wstrip'); if(!el)return;
+  if(wxCache&&!force&&Date.now()-wxTime<10*60*1000){renderWx(wxCache);return;}
+  const lat=D.settings.lat||49.08, lon=D.settings.lon||6.68;
+  try{
+    const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,shortwave_radiation_sum&timezone=Europe%2FParis&forecast_days=7`);
+    wxCache=await r.json(); wxTime=Date.now(); renderWx(wxCache);
+  }catch{ el.innerHTML='<div style="color:var(--txt4);font-size:13px;padding:8px 0">Météo indisponible</div>'; }
+}
+function renderWx(data){
+  const el=$('wstrip'); if(!el||!data?.daily)return;
+  el.innerHTML='';
+  data.daily.time.forEach((d,i)=>{
+    const dt=new Date(d+'T12:00:00'), dow=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][dt.getDay()];
+    const[ic]=wxIcon(data.daily.weathercode[i]);
+    const div=document.createElement('div'); div.className='wd'+(i===0?' now':'');
+    div.innerHTML=`<div class="wd-dow">${i===0?'Auj.':dow}</div><div class="wd-ic">${ic}</div><div class="wd-t">${Math.round(data.daily.temperature_2m_max[i])}°</div><div class="wd-p">~${estProd(data.daily.shortwave_radiation_sum[i],data.daily.weathercode[i])} kWh</div>`;
+    el.appendChild(div);
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// MODALS
+// ═══════════════════════════════════════════════════
+let editKey=null;
+function openM(id){
+  if(id==='instM'){$v('in_nom',D.settings.nom||'');$v('in_ville',D.settings.ville||'');$v('in_pan',D.settings.panneaux||16);$v('in_puiss',D.settings.puissance||3);}
+  if(id==='locM'){$v('lo_lat',D.settings.lat||'');$v('lo_lon',D.settings.lon||'');}
+  if(id==='objM'){$v('ob_yr',new Date().getFullYear());$v('ob_kwh',D.objectifs[new Date().getFullYear()]||'');}
+  if(id==='contratM'){$v('co_date',D.contratDebut||'');}
+  if(id==='tarifsM') buildTarifs();
+  if(id==='addM'&&!editKey){$v('am_mo',curYM());$v('am_kwh','');$v('am_idx','');$v('am_kwh2','');$v('am_note','');const me=meth();$d('am_mf',me==='mensuel'?'block':'none');$d('am_if',me==='index'?'block':'none');$t('am_ic','Production calculée : —');const d=$('am_del');if(d)d.style.display='none';}
+  const o=$(id); if(o) o.classList.add('open');
+}
+const closeM=id=>{ const o=$(id); if(o) o.classList.remove('open'); if(id==='addM') editKey=null; };
+const closeBg=(e,id)=>{ if(e.target.classList.contains('mo')) closeM(id); };
+
+function openAddM(k,existing){
+  editKey=existing?k:null;
+  const me=meth();
+  $t('addM_t', existing?`Modifier — ${MF[parseInt((k||curYM()).split('-')[1])-1]} ${(k||curYM()).split('-')[0]}`:'Nouveau relevé');
+  $v('am_mo',k||curYM()); $v('am_kwh',existing?.kwh||''); $v('am_idx',existing?.index||''); $v('am_kwh2',''); $v('am_note',existing?.note||'');
+  $d('am_mf',me==='mensuel'?'block':'none'); $d('am_if',me==='index'?'block':'none');
+  const del=$('am_del'); if(del) del.style.display=existing?'block':'none';
+  $t('am_ic','Production calculée : —');
+  openM('addM');
+}
+
+function calcIdx(){
+  const k=$('am_mo')?.value, idx=parseFloat($('am_idx')?.value);
+  if(!k||isNaN(idx))return;
+  const pi=D.releves[prevMo(k)]?.index;
+  if(pi!=null){ const diff=idx-pi; $t('am_ic',diff>=0?`Production calculée : ${fmt(diff,1)} kWh (${fmt(pi,0)} → ${fmt(idx,0)})`:'⚠️ Index inférieur au mois précédent'); }
+  else $t('am_ic','Index précédent inconnu — saisissez le kWh ci-dessous');
+}
+
+function saveRel(){
+  const k=$('am_mo')?.value; if(!k){toast('Sélectionnez un mois','⚠️');return;}
+  let kwh=null, index=null;
+  if(meth()==='mensuel'){
+    kwh=parseFloat($('am_kwh')?.value); if(isNaN(kwh)||kwh<0){toast('Production invalide','⚠️');return;}
+  } else {
+    const iv=parseFloat($('am_idx')?.value);
+    if(!isNaN(iv)&&iv>=0){ index=iv; const pi=D.releves[prevMo(k)]?.index; if(pi!=null) kwh=Math.max(0,iv-pi); }
+    if(kwh===null){ const k2=parseFloat($('am_kwh2')?.value); if(!isNaN(k2)&&k2>=0) kwh=k2; else{toast('Saisissez l\'index ou les kWh','⚠️');return;} }
+  }
+  D.releves[k]={kwh,index,note:$('am_note')?.value||''}; save();
+  editKey=null; closeM('addM'); toast('Relevé enregistré ✓');
+  if(curP===0)r0(); if(curP===1)r1(); if(curP===2)r2();
+}
+
+function delRel(){
+  if(!editKey)return;
+  if(!confirm(`Supprimer le relevé de ${editKey} ?`))return;
+  delete D.releves[editKey]; save(); editKey=null; closeM('addM'); toast('Supprimé 🗑');
+  if(curP===0)r0(); if(curP===1)r1(); if(curP===2)r2();
+}
+
+// ═══════════════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════════════
+function saveInst(){ D.settings.nom=$('in_nom')?.value||''; D.settings.ville=$('in_ville')?.value||''; D.settings.panneaux=parseInt($('in_pan')?.value)||16; D.settings.puissance=parseFloat($('in_puiss')?.value)||3; save(); closeM('instM'); r3(); if(curP===0)r0(); toast('Sauvegardé ✓'); }
+function saveLoc(){ D.settings.lat=parseFloat($('lo_lat')?.value)||null; D.settings.lon=parseFloat($('lo_lon')?.value)||null; save(); closeM('locM'); r3(); wxCache=null; toast('Localisation sauvegardée 📍'); }
+function saveObj(){ const y=parseInt($('ob_yr')?.value), k=parseFloat($('ob_kwh')?.value); if(!y||isNaN(k)){toast('Valeurs invalides','⚠️');return;} D.objectifs[y]=k; save(); closeM('objM'); r3(); if(curP===0)r0(); toast('Objectif enregistré 🎯'); }
+function saveContrat(){ const d=$('co_date')?.value; if(!d){toast('Date requise','⚠️');return;} D.contratDebut=d; save(); closeM('contratM'); r3(); if(curP===2)r2(); if(curP===0)r0(); toast('Contrat enregistré ✓'); }
+function autoGPS(){ if(!navigator.geolocation){toast('GPS non disponible','⚠️');return;} navigator.geolocation.getCurrentPosition(p=>{$v('lo_lat',p.coords.latitude.toFixed(4));$v('lo_lon',p.coords.longitude.toFixed(4));toast('Position obtenue 📍');},()=>toast('Position impossible','⚠️')); }
+
+// Tarifs
+function buildTarifs(){
+  const el=$('tarifsList'); if(!el)return;
+  if(!D.contratDebut){el.innerHTML='<div class="ibox">Configurez d\'abord la date de début de contrat.</div>';return;}
+  const[Y,M,Dd]=D.contratDebut.split('-').map(Number); el.innerHTML='';
+  D.tarifs.forEach((t,i)=>{
+    const y0=Y+i, y1=Y+i+1;
+    const row=document.createElement('div'); row.style.cssText='display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:.5px solid var(--sep2)';
+    row.innerHTML=`<div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--txt)">Période ${i+1}</div><div style="font-size:11px;color:var(--txt3);margin-top:1px">${String(Dd).padStart(2,'0')}/${String(M).padStart(2,'0')}/${y0} → ${String(Dd-1||28).padStart(2,'0')}/${String(M).padStart(2,'0')}/${y1}</div></div>
+      <input class="fi" type="number" step="0.0001" value="${t||''}" placeholder="0.1310" style="width:115px;text-align:right;font-size:15px" data-i="${i}" inputmode="decimal">
+      <button onclick="removeTarif(${i})" style="background:none;border:none;color:var(--red);font-size:20px;cursor:pointer;padding:4px;line-height:1">×</button>`;
+    el.appendChild(row);
+  });
+}
+const addTRow=()=>{ D.tarifs.push(null); buildTarifs(); };
+const removeTarif=i=>{ D.tarifs.splice(i,1); buildTarifs(); };
+function saveTarifs(){
+  document.querySelectorAll('#tarifsList input[data-i]').forEach((inp,i)=>{D.tarifs[i]=parseFloat(inp.value)||null;});
+  save(); closeM('tarifsM'); r3(); if(curP===2)r2(); if(curP===0)r0(); toast('Tarifs sauvegardés ✓');
+}
+
+// ═══════════════════════════════════════════════════
+// PDF
+// ═══════════════════════════════════════════════════
+function genPDF(){
+  const sel=$('pdf_sel'); if(!sel||sel.value===''){toast('Sélectionnez une période','⚠️');return;}
+  const ps=getPeriods(), p=ps[parseInt(sel.value)]; if(!p)return;
+  const r=calcPeriod(p), s=D.settings;
+  const{jsPDF}=window.jspdf; const doc=new jsPDF({unit:'mm',format:'a4'});
+  const fs=fmtDS(p.from.toISOString().split('T')[0]), ts=fmtDS(p.to.toISOString().split('T')[0]);
+  doc.setFillColor(10,10,10);doc.rect(0,0,210,34,'F');doc.setFillColor(255,159,10);doc.rect(0,0,7,34,'F');
+  doc.setTextColor(255,255,255);doc.setFontSize(18);doc.setFont('helvetica','bold');doc.text('AUTOFACTURE — EDF OA',15,14);
+  doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(180,180,180);doc.text('Producteur — Vente totale de la production',15,22);doc.text(`Généré le ${new Date().toLocaleDateString('fr-FR')}`,148,22);
+  doc.setTextColor(0,0,0);let y=44;
+  doc.setFontSize(10);doc.setFont('helvetica','bold');doc.text('INSTALLATION',15,y);y+=7;
+  doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(60,60,60);
+  [[`Nom : ${s.nom||'—'}`,`Ville : ${s.ville||'—'}`],[`Panneaux : ${s.panneaux||16}`,`Puissance : ${s.puissance||3} kWc`],[`Début contrat : ${D.contratDebut?fmtDS(D.contratDebut):'—'}`,`Période n° : ${p.index+1}`]].forEach(l=>{doc.text(l[0],15,y);doc.text(l[1],110,y);y+=7;});
+  y+=3;doc.setDrawColor(220,220,220);doc.line(15,y,195,y);y+=8;
+  doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(0,0,0);doc.text('PÉRIODE DE FACTURATION',15,y);y+=8;
+  [[`Période`,`${fs} au ${ts}`],[`Tarif de rachat`,`${p.tarif.toFixed(4)} €/kWh`],[`kWh injectés (calculé)`,`${fmt(r.kwh,1)} kWh`]].forEach((row,i)=>{
+    if(i%2===0){doc.setFillColor(250,250,250);doc.rect(15,y-5,180,8,'F');}
+    doc.setFont('helvetica','normal');doc.setTextColor(80,80,80);doc.text(row[0],18,y);doc.setFont('helvetica','bold');doc.setTextColor(0,0,0);doc.text(row[1],115,y);y+=10;
+  });
+  y+=4;doc.setFillColor(255,159,10);doc.rect(15,y-7,180,17,'F');
+  doc.setTextColor(0,0,0);doc.setFontSize(12);doc.setFont('helvetica','bold');doc.text('MONTANT TOTAL À PERCEVOIR',18,y+3);doc.setFontSize(18);doc.text(fmtE(r.rev),152,y+3);
+  y+=24;doc.setFontSize(10);doc.setFont('helvetica','bold');doc.text('RÉCAPITULATIF TOUTES PÉRIODES',15,y);y+=8;
+  doc.setFontSize(9);doc.setTextColor(100,100,100);['Période','Tarif','kWh','Montant'].forEach((h,i)=>{doc.text(h,[18,78,115,152][i],y);});y+=4;
+  doc.setDrawColor(200,200,200);doc.line(15,y,195,y);y+=5;
+  ps.forEach((pp,i)=>{
+    if(y>278)return; const rr=calcPeriod(pp);
+    if(i%2===0){doc.setFillColor(250,250,250);doc.rect(15,y-4,180,7,'F');}
+    doc.setFont('helvetica',pp.index===p.index?'bold':'normal');doc.setTextColor(pp.index===p.index?0:60);
+    doc.text(`${i+1}. ${fmtDS(pp.from.toISOString().split('T')[0])} → ${fmtDS(pp.to.toISOString().split('T')[0])}`,18,y);
+    doc.text(pp.tarif.toFixed(4)+'€',78,y);doc.text(fmt(rr.kwh,0)+' kWh',115,y);doc.text(fmtE(rr.rev),152,y);y+=7;
+  });
+  doc.setTextColor(160,160,160);doc.setFontSize(8);doc.setFont('helvetica','normal');doc.text('Document généré par SolarTrack • À titre indicatif',15,288);
+  doc.save(`autofacture_edfoa_p${p.index+1}.pdf`);
+  toast('PDF téléchargé 📄');
+}
+
+// ═══════════════════════════════════════════════════
+// IMPORT EXCEL / CSV
+// ═══════════════════════════════════════════════════
+let xlRows=[];
+function importXl(e){
+  const f=e.target.files[0]; if(!f)return;
+  const rd=new FileReader();
+  rd.onload=ev=>{
+    try{
+      const wb=XLSX.read(ev.target.result,{type:'array',cellDates:true});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      xlRows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      if(!xlRows.length){toast('Fichier vide','⚠️');return;}
+      const hdrs=xlRows[0]||[];
+      const opts=hdrs.map((h,i)=>`<option value="${i}">${h||'Col '+(i+1)}</option>`).join('');
+      $h('xl_dc','<option value="">—</option>'+opts); $h('xl_kc','<option value="">—</option>'+opts);
+      hdrs.forEach((h,i)=>{const hl=String(h).toLowerCase();if(hl.includes('date')||hl.includes('mois')){const e=$('xl_dc');if(e)e.value=i;}if(hl.includes('kwh')||hl.includes('prod')||hl.includes('energ')){const e=$('xl_kc');if(e)e.value=i;}});
+      $t('xl_info',`${xlRows.length-1} lignes — "${wb.SheetNames[0]}"`);
+      const prev=xlRows.slice(1,4).map(row=>`<div style="display:flex;gap:6px;padding:2px 0;border-bottom:.5px solid var(--sep2)">${row.slice(0,4).map(c=>`<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--txt2)">${c}</span>`).join('')}</div>`).join('');
+      $h('xl_prev',`<div style="display:flex;gap:6px;padding-bottom:3px;font-weight:700">${hdrs.slice(0,4).map(h=>`<span style="flex:1;font-size:10px;color:var(--txt3)">${h||'—'}</span>`).join('')}</div>${prev}`);
+      openM('xlM');
+    }catch(err){toast('Erreur: '+err.message,'⚠️');}
+  };
+  rd.readAsArrayBuffer(f); e.target.value='';
+}
+function doXl(){
+  const dc=parseInt($('xl_dc')?.value), kc=parseInt($('xl_kc')?.value);
+  if(isNaN(dc)||isNaN(kc)){toast('Choisissez les colonnes','⚠️');return;}
+  const skip=$('xl_skip')?.classList.contains('on');
+  const rows=skip?xlRows.slice(1):xlRows; let count=0;
+  rows.forEach(row=>{
+    const rd=row[dc], rk=row[kc]; if(rd===''||rk===''||rd==null||rk==null)return;
+    const kwh=parseFloat(String(rk).replace(',','.')); if(isNaN(kwh)||kwh<0)return;
+    let ym=null;
+    if(rd instanceof Date){ ym=`${rd.getFullYear()}-${String(rd.getMonth()+1).padStart(2,'0')}`; }
+    else{ const s=String(rd).trim(); if(/^\d{4}-\d{2}/.test(s))ym=s.substring(0,7); else if(/^\d{2}\/\d{4}$/.test(s)){const[m,y]=s.split('/');ym=`${y}-${m}`;} else if(/^\d{2}\/\d{2}\/\d{4}/.test(s)){const p=s.split('/');ym=`${p[2]}-${p[1]}`;} else{const d=new Date(s);if(!isNaN(d))ym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;} }
+    if(!ym)return; if(!D.releves[ym]){D.releves[ym]={kwh,index:null,note:'Excel'};count++;}
+  });
+  save(); closeM('xlM'); if(curP===1)r1(); if(curP===0)r0(); toast(`${count} relevé(s) importé(s) 📊`);
+}
+function importCsv(e){
+  const f=e.target.files[0]; if(!f)return;
+  const rd=new FileReader();
+  rd.onload=ev=>{
+    let count=0;
+    ev.target.result.trim().split('\n').forEach(line=>{
+      const p=line.split(/[;,]/); if(p.length<2)return;
+      const rd2=p[0].trim().replace(/"/g,''), rk=p[1].trim().replace(/"/g,'').replace(',','.');
+      const kwh=parseFloat(rk); if(isNaN(kwh)||kwh<0)return;
+      let ym=null;
+      if(/^\d{4}-\d{2}/.test(rd2))ym=rd2.substring(0,7); else if(/^\d{2}\/\d{4}$/.test(rd2)){const[m,y]=rd2.split('/');ym=`${y}-${m}`;} else if(/^\d{2}\/\d{2}\/\d{4}/.test(rd2)){const pp=rd2.split('/');ym=`${pp[2]}-${pp[1]}`;}
+      if(!ym)return; if(!D.releves[ym]){D.releves[ym]={kwh,index:null,note:'CSV'};count++;}
+    });
+    save(); if(curP===1)r1(); if(curP===0)r0(); toast(`${count} relevé(s) importé(s) ✓`);
+  };
+  rd.readAsText(f); e.target.value='';
+}
+
+// ═══════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════
+let tT=null;
+function toast(msg,ic='✓'){
+  const e=$('toast'); if(!e)return;
+  e.textContent=`${ic} ${msg}`; e.classList.add('show');
+  if(tT)clearTimeout(tT); tT=setTimeout(()=>e.classList.remove('show'),2600);
+}
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+(()=>{
+  applyTheme();
+  window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change',()=>{
+    if((D.settings.theme||'auto')==='auto') Chart.defaults.color=isDark()?'rgba(235,235,245,.5)':'rgba(0,0,0,.45)';
+  });
+})();
+</script>
+</body>
+</html>
